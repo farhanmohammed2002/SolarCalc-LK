@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sun, Compass, BookOpen, Database, User, HelpCircle, FileText, Calculator } from 'lucide-react';
+import { AuthModal } from './Auth/AuthModal';
 
 interface NavbarProps {
   activeTab: string;
@@ -7,6 +8,25 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('solarcalc_user');
+    if (saved) {
+      try {
+        setUser(JSON.parse(saved));
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem('solarcalc_user');
+    setUser(null);
+  };
+
   const navItems = [
     { id: 'home', label: 'Home', icon: Sun },
     { id: 'calculator', label: 'Solar Calculator', icon: Calculator },
@@ -62,18 +82,47 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
             })}
           </nav>
 
-          {/* CTA Button */}
-          <div className="flex items-center gap-3">
+          {/* CTA & Sign In Buttons */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {user ? (
+              <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 py-1 px-2.5 rounded-lg text-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-bold text-slate-800 hidden sm:inline">{user.name}</span>
+                <button
+                  onClick={handleSignOut}
+                  className="text-[10px] text-slate-500 hover:text-rose-600 font-semibold underline ml-1 cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsAuthOpen(true)}
+                className="px-3 py-2 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <User className="w-3.5 h-3.5 text-slate-500" />
+                <span>Sign In</span>
+              </button>
+            )}
+
             <button
               onClick={() => setActiveTab('calculator')}
-              className="px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm transition-all flex items-center gap-1.5 active:scale-95"
+              className="px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
             >
               <Calculator className="w-3.5 h-3.5" />
-              Calculate My Solar
+              <span className="hidden sm:inline">Calculate My Solar</span>
+              <span className="sm:hidden">Calculate</span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onLoginSuccess={loggedInUser => setUser(loggedInUser)}
+      />
 
       {/* Mobile Navigation Scrollable */}
       <div className="md:hidden overflow-x-auto border-t border-slate-100 px-4 py-2 bg-slate-50 flex gap-2 scrollbar-none">

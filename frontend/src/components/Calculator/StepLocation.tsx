@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
-import { MapPin, Sun, Compass, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
+import { MapPin, Sun, Compass, Sparkles, CheckCircle2, ArrowRight, Navigation, Loader2, AlertCircle } from 'lucide-react';
 import { SRI_LANKA_DISTRICTS } from '../../utils/solarEngine';
 import { DistrictLocation } from '../../types/solar';
+
+function getHaversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 interface StepLocationProps {
   selectedDistrict: string;
@@ -15,7 +26,50 @@ export const StepLocation: React.FC<StepLocationProps> = ({
   onNext
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [locating, setLocating] = useState(false);
+  const [gpsFeedback, setGpsFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const current = SRI_LANKA_DISTRICTS.find(d => d.name.toLowerCase() === selectedDistrict.toLowerCase()) || SRI_LANKA_DISTRICTS[0];
+
+  const handleAutoDetectGPS = () => {
+    if (!navigator.geolocation) {
+      setGpsFeedback({ type: 'error', text: 'Geolocation is not supported by your browser.' });
+      return;
+    }
+    setLocating(true);
+    setGpsFeedback(null);
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const userLat = pos.coords.latitude;
+        const userLon = pos.coords.longitude;
+
+        let nearestDist = Infinity;
+        let nearestDistrict = SRI_LANKA_DISTRICTS[0];
+
+        for (const d of SRI_LANKA_DISTRICTS) {
+          const dist = getHaversineDistanceKm(userLat, userLon, d.lat, d.lon);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestDistrict = d;
+          }
+        }
+
+        onSelectDistrict(nearestDistrict);
+        setLocating(false);
+        setGpsFeedback({
+          type: 'success',
+          text: `GPS Match: Selected ${nearestDistrict.name} District (~${nearestDist.toFixed(1)} km away at ${userLat.toFixed(3)}°N, ${userLon.toFixed(3)}°E)`
+        });
+      },
+      err => {
+        setLocating(false);
+        let msg = 'Could not acquire GPS position. Please pick your district manually.';
+        if (err.code === 1) msg = 'Location permission denied. Please allow location access in your browser or phone settings.';
+        setGpsFeedback({ type: 'error', text: msg });
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
+  };
 
   const filtered = SRI_LANKA_DISTRICTS.filter(d => 
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,6 +90,53 @@ export const StepLocation: React.FC<StepLocationProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* District Selector & List */}
         <div className="lg:col-span-7 space-y-4">
+          {/* GPS Auto-Location Action */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-3 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-300/60 rounded-2xl">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-bold shadow-xs">
+                <Navigation className="w-4 h-4 text-slate-950" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 block">Auto-Pinpoint via GPS</span>
+                <span className="text-[10px] text-slate-500 block">Reads your coordinates to match nearest Sri Lankan district</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleAutoDetectGPS}
+              disabled={locating}
+              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer shrink-0 disabled:opacity-60"
+            >
+              {locating ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                  <span>Locating Satellite...</span>
+                </>
+              ) : (
+                <>
+                  <Navigation className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Detect My Location</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* GPS Feedback Notice */}
+          {gpsFeedback && (
+            <div className={`p-3 rounded-xl border text-xs flex items-start gap-2 ${
+              gpsFeedback.type === 'success' 
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold'
+                : 'bg-rose-50 border-rose-200 text-rose-800'
+            }`}>
+              {gpsFeedback.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              )}
+              <span>{gpsFeedback.text}</span>
+            </div>
+          )}
+
           <div className="relative">
             <input
               type="text"
