@@ -47,19 +47,15 @@ jobs:
       - name: Build Android APK (Debug / Standalone)
         run: |
           cd frontend/android
-          ./gradlew assembleDebug --no-daemon --stacktrace > ../../gradle_build.log 2>&1 || true
-          cat ../../gradle_build.log | tail -n 100
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          find . -name "*.apk"
 
-      - name: Upload Build Log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-build-log
-          path: gradle_build.log
-
-      - name: Rename APK for Easy Identification
+      - name: Locate & Rename APK
         run: |
-          cp frontend/android/app/build/outputs/apk/debug/app-debug.apk SolarCalc_LK_V1.0.apk
+          APK_PATH=$(find frontend/android -name "*.apk" | head -n 1)
+          echo "Found APK at: $APK_PATH"
+          cp "$APK_PATH" SolarCalc_LK_V1.0.apk
+          ls -lh SolarCalc_LK_V1.0.apk
 
       - name: Upload Downloadable Android APK Artifact
         uses: actions/upload-artifact@v4
