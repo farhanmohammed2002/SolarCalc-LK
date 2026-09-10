@@ -38,3 +38,9 @@ desktop.ini
 .env
 .env.local
 .env.*.local
+
+# Android & Capacitor build outputs
+frontend/android/.gradle/
+frontend/android/app/build/
+frontend/android/build/
+*.apk
