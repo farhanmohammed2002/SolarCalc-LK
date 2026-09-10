@@ -48,7 +48,7 @@ jobs:
       - name: Build Android APK (Debug / Standalone)
         run: |
           cd frontend/android
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log || (echo "=== GRADLE FAILURE LOG ===" && grep -C 5 -i -E "(error|exception|failed|failure)" build.log | head -n 100 && exit 1)
 
       - name: Locate & Rename APK
         run: |
