@@ -25,9 +25,10 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Accept Android SDK Licenses
+      - name: Setup Android SDK Components
         run: |
           yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
       - name: Install Frontend & Build Vite Web App
         run: |
