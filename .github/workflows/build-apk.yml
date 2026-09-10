@@ -34,10 +34,10 @@ jobs:
           npm install --legacy-peer-deps
           npm run build
 
-      - name: Sync Capacitor Android
+      - name: Sync Web Assets to Android
         run: |
           cd frontend
-          npx cap sync android
+          npx cap copy android
 
       - name: Grant Executable Permissions to Gradle Wrapper
         run: |
@@ -46,7 +46,7 @@ jobs:
       - name: Build Android APK (Debug / Standalone)
         run: |
           cd frontend/android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Rename APK for Easy Identification
         run: |
