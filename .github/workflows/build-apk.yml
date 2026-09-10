@@ -28,7 +28,7 @@ jobs:
       - name: Setup Android SDK Components
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-34 build-tools;34.0.0'
+          packages: 'platforms;android-35 build-tools;35.0.0'
 
       - name: Install Frontend & Build Vite Web App
         run: |
@@ -48,8 +48,7 @@ jobs:
       - name: Build Android APK (Debug / Standalone)
         run: |
           cd frontend/android
-          ./gradlew assembleDebug --no-daemon --stacktrace || (echo "=== GRADLE FAILED ===" && ./gradlew assembleDebug --no-daemon --info | tail -n 60 && exit 1)
-          find . -name "*.apk"
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Locate & Rename APK
         run: |
