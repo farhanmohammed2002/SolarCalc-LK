@@ -1,0 +1,87 @@
+{
+  "effective_date": "2025-01-18",
+  "authority": "Public Utilities Commission of Sri Lanka (PUCSL)",
+  "source_document": "Final-Decision-Document-Electricity-Tariff-Revision-January-2025.pdf",
+  "category": "Domestic (Residential)",
+  "currency": "LKR",
+  "condition_3": "Fixed charges for solar prosumers shall be based on the net consumption.",
+  "lifeline_tier": {
+    "max_consumption": 60,
+    "blocks": [
+      {
+        "start": 0,
+        "end": 30,
+        "energy_rate": 4.0,
+        "fixed_charge": 75.0
+      },
+      {
+        "start": 31,
+        "end": 60,
+        "energy_rate": 6.0,
+        "fixed_charge": 200.0
+      }
+    ]
+  },
+  "above_60_tier": {
+    "blocks": [
+      {
+        "start": 0,
+        "end": 60,
+        "size": 60,
+        "energy_rate": 11.0
+      },
+      {
+        "start": 61,
+        "end": 90,
+        "size": 30,
+        "energy_rate": 14.0
+      },
+      {
+        "start": 91,
+        "end": 120,
+        "size": 30,
+        "energy_rate": 20.0
+      },
+      {
+        "start": 121,
+        "end": 180,
+        "size": 60,
+        "energy_rate": 33.0
+      },
+      {
+        "start": 181,
+        "end": 999999,
+        "size": 999999,
+        "energy_rate": 52.0
+      }
+    ],
+    "fixed_charges": [
+      {
+        "min_units": 61,
+        "max_units": 90,
+        "fixed_charge": 400.0
+      },
+      {
+        "min_units": 91,
+        "max_units": 120,
+        "fixed_charge": 1000.0
+      },
+      {
+        "min_units": 121,
+        "max_units": 180,
+        "fixed_charge": 1500.0
+      },
+      {
+        "min_units": 181,
+        "max_units": 999999,
+        "fixed_charge": 2000.0
+      }
+    ]
+  },
+  "tou_tariff": {
+    "day_rate": 35.0,
+    "peak_rate": 55.0,
+    "off_peak_rate": 15.0,
+    "fixed_charge": 2000.0
+  }
+}

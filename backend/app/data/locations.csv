@@ -1,0 +1,26 @@
+id,city,district,province,latitude,longitude,annual_pvout_kwh_kwp,opta_deg,ghi_kwh_m2_day,elevation_m,data_source
+1,Colombo,Colombo,Western,6.9271,79.8612,1570.0,9.0,5.4,15,World Bank Global Solar Atlas v2.0
+2,Gampaha,Gampaha,Western,7.084,79.9937,1510.0,10.0,5.19,15,World Bank Global Solar Atlas v2.0
+3,Kalutara,Kalutara,Western,6.5854,79.9607,1560.0,9.0,5.36,15,World Bank Global Solar Atlas v2.0
+4,Kandy,Kandy,Central,7.2906,80.6337,1470.0,10.0,5.07,15,World Bank Global Solar Atlas v2.0
+5,Matale,Matale,Central,7.4675,80.6234,1430.0,10.0,4.91,15,World Bank Global Solar Atlas v2.0
+6,Nuwara Eliya,Nuwara Eliya,Central,6.9497,80.7891,1410.0,9.0,4.66,15,World Bank Global Solar Atlas v2.0
+7,Galle,Galle,Southern,6.0535,80.221,1550.0,8.0,5.33,15,World Bank Global Solar Atlas v2.0
+8,Matara,Matara,Southern,5.9549,80.555,1570.0,8.0,5.4,15,World Bank Global Solar Atlas v2.0
+9,Hambantota,Hambantota,Southern,6.1429,81.1212,1620.0,7.0,5.62,15,World Bank Global Solar Atlas v2.0
+10,Jaffna,Jaffna,Northern,9.6615,80.0255,1580.0,9.0,5.44,15,World Bank Global Solar Atlas v2.0
+11,Kilinochchi,Kilinochchi,Northern,9.3803,80.377,1580.0,9.0,5.48,15,World Bank Global Solar Atlas v2.0
+12,Mannar,Mannar,Northern,8.981,79.9044,1650.0,9.0,5.67,15,World Bank Global Solar Atlas v2.0
+13,Vavuniya,Vavuniya,Northern,8.7542,80.4982,1550.0,9.0,5.38,15,World Bank Global Solar Atlas v2.0
+14,Mullaitivu,Mullaitivu,Northern,9.2671,80.8142,1590.0,10.0,5.49,15,World Bank Global Solar Atlas v2.0
+15,Batticaloa,Batticaloa,Eastern,7.7102,81.6924,1610.0,8.0,5.61,15,World Bank Global Solar Atlas v2.0
+16,Ampara,Ampara,Eastern,7.2914,81.672,1550.0,7.0,5.43,15,World Bank Global Solar Atlas v2.0
+17,Trincomalee,Trincomalee,Eastern,8.5874,81.2152,1580.0,9.0,5.49,15,World Bank Global Solar Atlas v2.0
+18,Kurunegala,Kurunegala,North Western,7.4863,80.3623,1480.0,10.0,5.12,15,World Bank Global Solar Atlas v2.0
+19,Puttalam,Puttalam,North Western,8.0362,79.8283,1580.0,9.0,5.46,15,World Bank Global Solar Atlas v2.0
+20,Anuradhapura,Anuradhapura,North Central,8.3114,80.4037,1540.0,9.0,5.34,15,World Bank Global Solar Atlas v2.0
+21,Polonnaruwa,Polonnaruwa,North Central,7.9403,81.0188,1560.0,7.0,5.45,15,World Bank Global Solar Atlas v2.0
+22,Badulla,Badulla,Uva,6.9934,81.055,1510.0,7.0,5.17,15,World Bank Global Solar Atlas v2.0
+23,Monaragala,Monaragala,Uva,6.8728,81.3507,1510.0,7.0,5.26,15,World Bank Global Solar Atlas v2.0
+24,Ratnapura,Ratnapura,Sabaragamuwa,6.6828,80.4037,1440.0,9.0,5.0,15,World Bank Global Solar Atlas v2.0
+25,Kegalle,Kegalle,Sabaragamuwa,7.2513,80.3464,1480.0,10.0,5.11,15,World Bank Global Solar Atlas v2.0

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "NET_METERING",
+    "name": "Net Metering",
+    "description": "Electricity generated offsets consumption directly on a 1:1 kWh basis. Excess export is banked as energy credits for future months. No cash payouts.",
+    "export_rate_lkr_per_kwh": 0.0,
+    "compensation_type": "ENERGY_CREDIT",
+    "contract_years": 20,
+    "source": "CEB / PUCSL Guidelines Rev 1"
+  },
+  {
+    "id": "NET_ACCOUNTING",
+    "name": "Net Accounting",
+    "description": "Electricity generated offsets monthly consumption. If generation exceeds consumption, net export is purchased by CEB in cash at LKR 44.14/kWh (<=20kW). If consumption exceeds generation, net import is billed at normal domestic tariffs.",
+    "export_rate_lkr_per_kwh": 44.14,
+    "export_rate_commercial_lkr": 43.02,
+    "compensation_type": "CASH_EXPORT",
+    "contract_years": 20,
+    "source": "CEB Tariff Announcement Oct 2023 / Cabinet 02-05-2023"
+  },
+  {
+    "id": "NET_PLUS",
+    "name": "Net Plus",
+    "description": "Total gross generation from solar PV is exported to the grid and paid in cash at LKR 44.14/kWh. Total household consumption is imported and billed separately under normal domestic tariffs.",
+    "export_rate_lkr_per_kwh": 44.14,
+    "compensation_type": "GROSS_EXPORT",
+    "contract_years": 20,
+    "source": "CEB Tariff Announcement Oct 2023 / Cabinet 02-05-2023"
+  }
+]
