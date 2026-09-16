@@ -62,11 +62,17 @@ jobs:
           if [ -f frontend/android/build.log ]; then
             echo "### Gradle Build Log" >> $GITHUB_STEP_SUMMARY
             echo '```text' >> $GITHUB_STEP_SUMMARY
-            tail -n 80 frontend/android/build.log >> $GITHUB_STEP_SUMMARY || true
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            grep -i -C 1 -E "(error|exception|failed|failure)" frontend/android/build.log | head -n 30 | while IFS= read -r line; do
+            echo "::group::Gradle Full Error Section"
+            grep -A 15 "\* Where:" frontend/android/build.log | while IFS= read -r line; do
               echo "::error::$line"
             done
+            grep -A 15 "\* What went wrong:" frontend/android/build.log | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+            grep -A 10 "Caused by:" frontend/android/build.log | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+            echo "::endgroup::"
           fi
           if [ "${{ steps.gradle_step.outcome }}" != "success" ]; then
             echo "Gradle failed with outcome ${{ steps.gradle_step.outcome }}"
