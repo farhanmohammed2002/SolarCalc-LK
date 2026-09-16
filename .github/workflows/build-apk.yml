@@ -28,7 +28,7 @@ jobs:
       - name: Setup Android SDK Components
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-35 build-tools;35.0.0'
+          packages: 'platforms;android-35 platforms;android-34 build-tools;35.0.0 build-tools;34.0.0'
 
       - name: Install Frontend & Build Vite Web App
         run: |
@@ -48,11 +48,20 @@ jobs:
       - name: Build Android APK (Debug / Standalone)
         run: |
           cd frontend/android
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log || (echo "=== GRADLE FAILURE LOG ===" && grep -C 5 -i -E "(error|exception|failed|failure)" build.log | head -n 100 && exit 1)
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Locate & Rename APK
         run: |
-          APK_PATH=$(find frontend/android -name "*.apk" | head -n 1)
+          echo "Scanning for APK outputs..."
+          find frontend/android -name "*.apk"
+          APK_PATH=$(find frontend/android/app/build/outputs/apk -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            APK_PATH=$(find frontend/android -name "*.apk" | head -n 1)
+          fi
+          if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
+            echo "ERROR: APK file was not found."
+            exit 1
+          fi
           echo "Found APK at: $APK_PATH"
           cp "$APK_PATH" SolarCalc_LK_V1.0.apk
           ls -lh SolarCalc_LK_V1.0.apk
