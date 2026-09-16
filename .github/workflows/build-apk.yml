@@ -39,7 +39,8 @@ jobs:
       - name: Sync Web Assets to Android
         run: |
           cd frontend
-          npx cap sync android
+          mkdir -p android/app/src/main/assets/public
+          cp -r dist/* android/app/src/main/assets/public/
 
       - name: Grant Executable Permissions to Gradle Wrapper
         run: |
@@ -60,8 +61,10 @@ jobs:
         if: always()
         run: |
           if [ -f frontend/android/build.log ]; then
-            echo "### Gradle Build Log" >> $GITHUB_STEP_SUMMARY
+            echo "### Gradle Build Log (tail)" >> $GITHUB_STEP_SUMMARY
             echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 60 frontend/android/build.log >> $GITHUB_STEP_SUMMARY || true
+            echo '```' >> $GITHUB_STEP_SUMMARY
             echo "::group::Gradle Full Error Section"
             grep -A 15 "\* Where:" frontend/android/build.log | while IFS= read -r line; do
               echo "::error::$line"
