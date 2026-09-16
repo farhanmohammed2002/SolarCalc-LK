@@ -39,7 +39,7 @@ jobs:
       - name: Sync Web Assets to Android
         run: |
           cd frontend
-          npx cap copy android || cp -r dist/* android/app/src/main/assets/public/
+          npx cap sync android
 
       - name: Grant Executable Permissions to Gradle Wrapper
         run: |
