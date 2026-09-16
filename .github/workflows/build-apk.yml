@@ -46,9 +46,22 @@ jobs:
           chmod +x frontend/android/gradlew
 
       - name: Build Android APK (Debug / Standalone)
+        id: gradle_build
+        continue-on-error: true
         run: |
           cd frontend/android
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee gradle_build.log
+
+      - name: Report Build Logs on Failure
+        if: steps.gradle_build.outcome != 'success'
+        run: |
+          echo "=== GRADLE FAILURE: LAST 150 LINES ==="
+          tail -n 150 frontend/android/gradle_build.log
+          echo "### Gradle Build Failed" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          tail -n 80 frontend/android/gradle_build.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          exit 1
 
       - name: Locate & Rename APK
         run: |
