@@ -59,7 +59,7 @@ for (def func : cdvPluginPostBuildExtras) {
 }
 
 tasks.whenTaskAdded { task ->
-    if (task.name.contains("AarMetadata")) {
+    if (task.name.contains("AarMetadata") || task.name.contains("DuplicateClasses")) {
         task.enabled = false
     }
 }
