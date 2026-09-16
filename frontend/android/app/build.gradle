@@ -61,9 +61,3 @@ configurations.all {
     exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
     exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
 }
-
-tasks.whenTaskAdded { task ->
-    if (task.name.contains("AarMetadata") || task.name.contains("DuplicateClasses")) {
-        task.enabled = false
-    }
-}

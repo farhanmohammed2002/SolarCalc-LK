@@ -57,9 +57,3 @@ apply from: "cordova.variables.gradle"
 for (def func : cdvPluginPostBuildExtras) {
     func()
 }
-
-tasks.whenTaskAdded { task ->
-    if (task.name.contains("AarMetadata") || task.name.contains("DuplicateClasses")) {
-        task.enabled = false
-    }
-}
