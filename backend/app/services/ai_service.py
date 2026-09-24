@@ -1,6 +1,7 @@
 """
 SolarCalc LK V1.0 — AI Technical Assistant Service
 Engineering-grounded assistant for Sri Lankan residential rooftop solar PV planning.
+Supports Google Gemini, OpenAI-compatible LLMs, and intelligent built-in engineering engine.
 """
 
 import os
@@ -10,99 +11,85 @@ import urllib.request
 import urllib.error
 from typing import Dict, Any, Optional
 
+# Load local .env if available
+def _load_env_file():
+    candidates = [
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"),
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            k, v = line.split("=", 1)
+                            k = k.strip()
+                            v = v.strip().strip("'\"")
+                            if k not in os.environ:
+                                os.environ[k] = v
+            except Exception:
+                pass
+
+_load_env_file()
+
 AI_SYSTEM_PROMPT = """You are SolarCalc AI, the technical assistant for SolarCalc LK, a Sri Lanka-specific residential rooftop solar PV planning and economic assessment platform.
 
 Your role is to explain the SolarCalc LK platform, its calculations, solar PV engineering concepts, system results, economic analysis, electricity tariff concepts, rooftop solar schemes, equipment information, and technical documentation.
 
-Always prioritize verified SolarCalc LK data and calculation results.
-Never invent tariff values, equipment specifications, solar-resource values, regulatory requirements, or financial results.
+Always prioritize verified SolarCalc LK data and calculation results:
+- PUCSL January 18, 2025 domestic electricity tariffs and Condition 3 (net fixed charge for solar prosumers).
+- CEB Feed-in Schemes: Net Metering (1:1 kWh rolling banking), Net Accounting (surplus paid in cash at LKR 44.14/kWh for <=20 kW), and Net Plus (gross export at LKR 44.14/kWh).
+- World Bank / ESMAP Global Solar Atlas v2.0 microclimatic solar resource data (1,350 to 1,650 kWh/kWp/year across 25 Sri Lankan districts).
+- Verified equipment: JinkoSolar Tiger Neo N-Type (470W/475W/545W/630W/670W), REC Alpha Pure-RX (470W HJT), LONGi Hi-MO X6 (550W), Sungrow, Huawei SUN2000, Deye, SMA, Fronius, GoodWe inverters, and LiFePO4 batteries (Deye SE-G5.1, Huawei LUNA2000, Sungrow SBR, GoodWe Lynx, BYD).
 
-When a question relates to a user's calculated system, use the supplied calculation context.
-
-Clearly distinguish between:
-- calculated SolarCalc LK results,
-- project documentation,
-- general educational information,
-- information requiring external verification.
-
-If information is unavailable, clearly state that it is not available in the SolarCalc LK knowledge base.
-
-Explain technical concepts clearly and progressively.
-Do not claim to replace a qualified electrical engineer, utility authority, or professional site inspection.
-
-For installation, electrical safety, structural suitability, grid connection, or regulatory approval questions, provide educational guidance and direct the user to the appropriate official source or qualified professional where necessary.
-
-Keep answers concise but technically meaningful.
-Use equations when useful.
-Use bullet points and short sections for complex explanations.
+When answering questions about the website, explain how to navigate the 5-step Calculator, download PDF assessment proposals, explore the Solar Map, review the Methodology, download reports, or inspect equipment.
 
 Response style:
-- Short paragraphs
-- Bullet points
-- Numbered steps
-- Small tables or equations where useful
-- Simple technical explanations without excessive fluff
-- Never modify the actual SolarCalc LK calculation results through conversation."""
+- Friendly, professional, and engineering-grounded.
+- Clear formatting with bullet points and bold highlights.
+- Keep answers concise and direct.
+"""
 
-# Grounded Knowledge Base Constants
-KNOWLEDGE_BASE = {
-    "tariffs": {
-        "revision": "January 18, 2025 (PUCSL)",
-        "document": "Final-Decision-Document-Electricity-Tariff-Revision-January-2025.pdf",
-        "lifeline": [
-            {"units": "0-30", "energy_rate": 4.0, "fixed_charge": 75.0},
-            {"units": "31-60", "energy_rate": 6.0, "fixed_charge": 200.0}
-        ],
-        "above_60": [
-            {"block": "0-60", "rate": 11.0},
-            {"block": "61-90", "rate": 14.0},
-            {"block": "91-120", "rate": 20.0},
-            {"block": "121-180", "rate": 33.0},
-            {"block": ">180", "rate": 52.0}
-        ],
-        "above_60_fixed": [
-            {"range": "61-90", "charge": 400.0},
-            {"range": "91-120", "charge": 1000.0},
-            {"range": "121-180", "charge": 1500.0},
-            {"range": ">180", "charge": 2000.0}
-        ],
-        "condition_3": "Fixed charges for solar prosumers shall be based on net consumption."
-    },
-    "schemes": {
-        "NET_METERING": {
-            "name": "Net Metering",
-            "desc": "1:1 kWh offset against grid consumption. Excess generation is banked as energy credits with no cash payout.",
-            "export_rate": "0.00 LKR/kWh (energy credit banking)",
-            "contract": "20 years"
+def _call_gemini_api(api_key: str, message: str, context_str: str) -> Optional[str]:
+    """Call Google Gemini REST API (gemini-1.5-flash / gemini-2.0-flash)."""
+    model = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    
+    payload = {
+        "system_instruction": {
+            "parts": [{"text": f"{AI_SYSTEM_PROMPT}\n\nCURRENT SOLARCALC LK CONTEXT:\n{context_str}"}]
         },
-        "NET_ACCOUNTING": {
-            "name": "Net Accounting",
-            "desc": "Generated energy offsets monthly consumption. Net export is paid by CEB at LKR 44.14/kWh (<=20 kW). Net import is billed under PUCSL domestic tariffs.",
-            "export_rate": "44.14 LKR/kWh (<=20 kW)",
-            "contract": "20 years"
-        },
-        "NET_PLUS": {
-            "name": "Net Plus",
-            "desc": "All PV generation is exported to the grid at LKR 44.14/kWh. Entire household consumption is imported and billed separately.",
-            "export_rate": "44.14 LKR/kWh (<=20 kW)",
-            "contract": "20 years"
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": message}]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.25,
+            "maxOutputTokens": 1000
         }
-    },
-    "solar_resource": {
-        "source": "World Bank / ESMAP Global Solar Atlas (GSA) v2.0",
-        "yield_range": "1,350 to 1,650 kWh/kWp/year",
-        "optimum_tilt": "7° to 10° True South (180° azimuth)",
-        "daily_ghi": "4.5 to 5.8 kWh/m²/day"
     }
-}
+    
+    try:
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
+        with urllib.request.urlopen(req, timeout=12) as response:
+            res_json = json.loads(response.read().decode("utf-8"))
+            candidates = res_json.get("candidates", [])
+            if candidates:
+                parts = candidates[0].get("content", {}).get("parts", [])
+                if parts:
+                    return parts[0].get("text", "").strip()
+    except Exception as e:
+        print(f"[AI Service] Gemini API call error: {e}")
+    return None
 
 
-def _call_external_llm(message: str, context_str: str) -> Optional[str]:
-    """Call external OpenAI-compatible or Google Gemini LLM API if configured."""
-    api_key = os.environ.get("AI_API_KEY")
-    if not api_key:
-        return None
-
+def _call_openai_api(api_key: str, message: str, context_str: str) -> Optional[str]:
+    """Call OpenAI-compatible REST API (OpenAI, Groq, OpenRouter, DeepSeek)."""
     base_url = os.environ.get("AI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     model = os.environ.get("AI_MODEL", "gpt-4o-mini")
 
@@ -112,8 +99,8 @@ def _call_external_llm(message: str, context_str: str) -> Optional[str]:
             {"role": "system", "content": f"{AI_SYSTEM_PROMPT}\n\nCURRENT CONTEXT:\n{context_str}"},
             {"role": "user", "content": message}
         ],
-        "max_tokens": 800,
-        "temperature": 0.2
+        "max_tokens": 1000,
+        "temperature": 0.25
     }
 
     url = f"{base_url}/chat/completions"
@@ -128,8 +115,8 @@ def _call_external_llm(message: str, context_str: str) -> Optional[str]:
             res_data = json.loads(response.read().decode("utf-8"))
             return res_data["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        print(f"[AI Service] External LLM error: {e}, falling back to built-in engineering engine.")
-        return None
+        print(f"[AI Service] OpenAI-compatible LLM error: {e}")
+    return None
 
 
 def _format_context(context: Optional[Dict[str, Any]]) -> str:
@@ -156,298 +143,288 @@ def _format_context(context: Optional[Dict[str, Any]]) -> str:
 def _generate_grounded_response(message: str, context: Optional[Dict[str, Any]]) -> str:
     """
     Intelligent built-in engineering inference engine.
-    Produces accurate, educational, and contextual answers grounded in SolarCalc LK methodology.
+    Covers all aspects of SolarCalc LK: reports, calculation, tariffs, schemes, equipment, GPS, etc.
     """
     q = message.lower().strip()
+    # Normalize common typos
+    q_norm = q.replace("dwload", "download").replace("dwnload", "download").replace("donwload", "download")
+    
     calc = (context or {}).get("calculation") or {}
     page = (context or {}).get("page") or ""
 
-    # 1. Calculation Results Explanation ("Explain my results", "Explain my solar system", etc.)
-    if any(k in q for k in ["explain my result", "explain my system", "explain results", "what are my results", "explain my solar"]):
+    # 1. DOWNLOAD / REPORT / PDF / EXPORT
+    if any(k in q_norm for k in ["download report", "download pdf", "how to download", "get report", "download assessment", "technical report", "data package", "export pdf", "proposal", "pdf report", "download"]):
+        district = calc.get("district", "your location") if calc else "your property"
+        return f"""### 📄 How to Download Reports on SolarCalc LK
+
+You can download **two types of official engineering reports** directly from the website:
+
+---
+
+#### 1. 📋 Preliminary Solar PV Proposal (Personalized Client PDF)
+* **Where to get it**: In the **Calculator** tab (Step 5: Results Dashboard).
+* **How to download**:
+  1. Complete Steps 1 through 4 of the Calculator (or click *Calculate My Solar System*).
+  2. On the **Results Dashboard**, look at the top-right corner of the summary header.
+  3. Click the green **`[ 📥 Download PDF Assessment ]`** button.
+  4. Your customized PDF report will generate instantly with:
+     - The official **SolarCalc LK Report Logo**
+     - Sized capacity ({calc.get('system_capacity_kwp', '3.3')} kWp DC) and string layout
+     - Selected PV panels & inverter matching verification
+     - Monthly generation table & 20-year cash-flow projection
+     - PUCSL Jan 2025 tariff and CEB RTSPV economic settlement breakdown
+
+---
+
+#### 2. 📚 25-Section Technical Validation Report & Data Package
+* **Where to get it**: Click the **`Reports`** tab in the top navigation bar.
+* **Available downloads**:
+  - **`Technical Report (PDF)`**: Comprehensive 25-section engineering white paper covering PUCSL 2025 tariffs, Global Solar Atlas spatial models, and 12 validation cases.
+  - **`Technical Report (DOCX)`**: Fully editable Microsoft Word version with equations and tables.
+  - **`Data Package (ZIP)`**: Complete dataset archive containing raw CSVs, district irradiance tables, PUCSL tariff documents, and equipment catalogues.
+
+> [!TIP]
+> Both reports are free to download and ready for client proposals or academic reference!"""
+
+    # 2. CALCULATION RESULTS EXPLANATION
+    if any(k in q_norm for k in ["explain my result", "explain my system", "explain results", "what are my results", "explain my solar", "explain calculation"]):
         if calc:
             capacity = calc.get("system_capacity_kwp") or calc.get("actual_capacity_kwp") or "N/A"
             panels = calc.get("panel_quantity") or calc.get("panel_count") or "N/A"
-            panel_model = calc.get("panel_model") or "Tier-1 415W Mono PERC"
-            inverter = calc.get("inverter_model") or calc.get("inverter") or "Grid-Tied String Inverter"
+            panel_model = calc.get("panel_model") or "Tier-1 470W Bifacial TOPCon"
+            inverter = calc.get("inverter_model") or calc.get("inverter") or "Single-Phase Grid-Tied Inverter"
             gen = calc.get("annual_generation_kwh") or "N/A"
             savings = calc.get("annual_savings_lkr") or calc.get("annual_net_benefit_lkr") or "N/A"
             cost = calc.get("estimated_system_cost_lkr") or calc.get("system_cost_lkr") or "N/A"
             payback = calc.get("payback_years") or calc.get("simple_payback_years") or "N/A"
-            district = calc.get("district") or calc.get("location") or "your selected area"
+            district = calc.get("district") or calc.get("location") or "Selected District"
             scheme = calc.get("scheme") or "Net Accounting"
 
             return f"""### 📊 Your SolarCalc LK Assessment Summary ({district})
 
-Here is the technical breakdown of your simulated solar PV system:
+Here is the engineering breakdown of your calculated system:
 
-1. **Recommended System Size**: **{capacity} kWp**
+1. **Recommended Capacity**: **{capacity} kWp DC**
 2. **PV Modules**: **{panels} × {panel_model}**
-3. **Selected Inverter**: **{inverter}**
-4. **Estimated Annual Generation**: **{gen:,} kWh/year** (based on Global Solar Atlas microclimatic solar resource)
+3. **Matched Inverter**: **{inverter}**
+4. **Estimated Annual Generation**: **{gen:,} kWh/year** (Global Solar Atlas model)
 5. **Solar Scheme**: **{scheme}**
-6. **Estimated Annual Net Benefit**: **LKR {savings:,}**
+6. **Estimated Annual Net Benefit**: **LKR {savings:,} / year**
 7. **Estimated Turnkey System Cost**: **LKR {cost:,}**
 8. **Simple Payback Period**: **{payback} years**
 
 > [!NOTE]
-> All figures are computed using the verified PUCSL January 18, 2025 domestic tariff blocks and CEB RTSPV Feed-in Tariff gazette rates."""
+> Net fixed charge savings are calculated under **PUCSL January 18, 2025 Condition 3** (fixed charge billed solely on residual net consumption). Excess units under Net Accounting receive LKR 44.14/kWh in cash credits from CEB/LECO."""
         else:
             return """To explain your specific results, please run a simulation in the **Solar Calculator** first!
 
-Once you complete the 5-step calculation, I will automatically read your system size, module quantity, inverter selection, annual yield, and payback period to give you an itemized technical evaluation."""
+1. Open the **Calculator** tab.
+2. Enter your district and monthly electricity consumption (kWh or LKR).
+3. Click **Calculate My Solar System**.
+4. Then return here or click *"Ask SolarCalc AI about these results"*, and I will provide an itemized engineering breakdown of your numbers!"""
 
-    # 2. "Why was this inverter selected?"
-    if "why" in q and "inverter" in q:
-        if calc:
-            inv = calc.get("inverter_model") or calc.get("inverter") or "the selected inverter"
-            cap = calc.get("system_capacity_kwp") or calc.get("actual_capacity_kwp") or "your system"
-            return f"""### ⚡ Inverter Selection Rationale for {cap} kWp
+    # 3. GPS AUTO LOCATION
+    if any(k in q_norm for k in ["gps", "auto location", "auto-location", "coordinate", "pinpoint", "my location"]):
+        return """### 🛰️ GPS Auto-Location in SolarCalc LK
 
-SolarCalc LK matched **{inv}** based on strict engineering rules:
+SolarCalc LK features built-in **GPS Auto-Location**:
 
-1. **DC-to-AC Ratio (1.10 - 1.35)**:
-   The inverter capacity is sized slightly lower than the peak DC module capacity to maximize operating efficiency during early morning and late afternoon without clipping peak midday energy.
-2. **MPPT Voltage Window**:
-   The string's maximum voltage at minimum temperature (15°C cold morning limit) remains comfortably below the inverter's maximum input rating, and minimum operating voltage (65°C hot roof limit) stays above the MPPT startup threshold.
-3. **Grid Phase Compatibility**:
-   Single-phase inverters are mandated for systems ≤ 5 kWp, whereas three-phase units are selected for systems > 5 kWp in compliance with CEB grid connection guidelines."""
-        else:
-            return """SolarCalc LK matches inverters automatically using three engineering criteria:
-- **DC/AC Oversizing Ratio**: Maintained strictly between **1.10 and 1.35**.
-- **MPPT Voltage Range**: Validates string $V_{oc}$ at 15°C and $V_{mp}$ at 65°C.
-- **Phase Balance**: Single-phase (230V) for systems ≤ 5 kWp; three-phase (400V) for larger capacities."""
+1. In **Step 1 (Location & Solar Irradiance)** of the Calculator, click the **`[ 🛰️ GPS Auto-Location ]`** button.
+2. When prompted by your browser, tap **"Allow"** to grant location access.
+3. The app reads your precise latitude & longitude coordinates.
+4. Using the Euclidean territorial distance engine, it automatically maps your location to the nearest of **25 Sri Lankan districts** (e.g. Colombo, Jaffna, Kandy, Galle, Trincomalee).
+5. It then pulls the exact **Global Solar Atlas v2.0 microclimatic yield (PVOUT)** and optimum tilt angle for your rooftop!"""
 
-    # 3. "Why did the system recommend X panels?" or panel sizing
-    if ("why" in q and "panel" in q) or "system size" in q or "calculate my solar system size" in q:
-        if calc:
-            panels = calc.get("panel_quantity") or calc.get("panel_count") or 6
-            cap = calc.get("system_capacity_kwp") or calc.get("actual_capacity_kwp") or "2.49"
-            units = calc.get("monthly_consumption_kwh") or calc.get("monthly_units_kwh") or 250
-            return f"""### 📐 System Sizing Logic ({panels} Panels / {cap} kWp)
-
-Your system was sized to offset your consumption of **{units} kWh/month** using this formula:
-
-$$P_{{req}} = \\frac{{E_{{annual}} \\times f_{{offset}}}}{{Y_{{PV}} \\times \\eta_{{site}}}}$$
-
-1. **Annual Demand**: {units} kWh/mo × 12 = **{int(units)*12} kWh/year**.
-2. **Local Specific Yield ($Y_{{PV}}$)**: Evaluated from the Global Solar Atlas for your district.
-3. **Integer Module Rounding**:
-   $$N_{{panels}} = \\left\\lceil \\frac{{P_{{req}} \\times 1000}}{{P_{{STC}}}} \\right\\rceil = \\mathbf{{{panels}\\text{{ panels}}}}$$
-   $$\\text{{Installed Capacity}} = \\frac{{{panels} \\times 415\\text{{ W}}}}{{1000}} = \\mathbf{{{cap}\\text{{ kWp}}}}$$"""
-        else:
-            return """SolarCalc LK calculates system size by matching your target annual energy consumption against your district's specific solar yield:
-
-$$P_{req} = \\frac{E_{load} \\times 12 \\times f_{offset}}{Y_{PV} \\times \\eta_{site}} \\text{ [kWp]}$$
-
-Where:
-- $E_{load}$: Average monthly consumption in kWh
-- $f_{offset}$: Desired offset percentage (default 100%)
-- $Y_{PV}$: Specific annual PV yield from Global Solar Atlas (1,350 - 1,650 kWh/kWp/yr)
-- $\\eta_{site}$: Tilt and azimuth derating factor
-
-The result is rounded up to the nearest whole number of commercial tier-1 panels."""
-
-    # 4. "What is kWp?" or kW vs kWp
-    if "kwp" in q or "kw vs kwp" in q or "kilowatt-peak" in q:
-        return """**kWp** stands for **kilowatt-peak**.
-
-It measures the nominal DC power output of a solar PV module under Standard Test Conditions (STC):
-- Irradiance: **1,000 W/m²**
-- Cell Temperature: **25°C**
-- Air Mass: **AM 1.5**
-
-### Practical Example:
-A standard residential panel is rated at **415 W** (= 0.415 kWp).
-If you install 6 panels:
-$$6 \\times 0.415\\text{ kWp} = \\mathbf{2.49\\text{ kWp}}$$
-
-*Contrast with kW*:
-- **kWp (DC)** is the peak laboratory rating of the panels.
-- **kW (AC)** is the actual continuous electrical power produced by the inverter in real operating conditions."""
-
-    # 5. Payback period & economic analysis
-    if "payback" in q or "roi" in q or "economic" in q:
-        if calc and ("payback_years" in calc or "simple_payback_years" in calc):
-            pb = calc.get("payback_years") or calc.get("simple_payback_years")
-            cost = calc.get("estimated_system_cost_lkr") or calc.get("system_cost_lkr") or "N/A"
-            sav = calc.get("annual_savings_lkr") or calc.get("annual_net_benefit_lkr") or "N/A"
-            return f"""### 💰 Your Payback Period: {pb} Years
-
-The **Simple Payback Period** is calculated as:
-
-$$\\text{{Simple Payback}} = \\frac{{\\text{{Turnkey System Cost}}}}{{\\text{{Annual Net Benefit}}}} = \\frac{{\\text{{LKR }}{cost:,}}}{{\\text{{LKR }}{sav:,}}} = \\mathbf{{{pb}\\text{{ years}}}}$$
-
-- **20-Year Cash Flow**: Takes into account 0.5%/year panel degradation, 1.5% escalated O&M costs, and an inverter replacement allowance at year 10.
-- With current PUCSL tariffs, typical domestic payback in Sri Lanka ranges between **3.5 to 5.5 years**."""
-        else:
-            return """The **Simple Payback Period** measures the time in years required for accumulated electricity bill savings and export revenues to equal the initial turnkey system investment:
-
-$$\\text{Simple Payback (years)} = \\frac{\\text{Total Installed System Cost (LKR)}}{\\text{Annual Net Benefit (LKR/year)}}$$
-
-In Sri Lanka under the PUCSL January 2025 tariffs, residential payback periods typically range between **3.5 to 5.5 years** depending on consumption tier and CEB export scheme."""
-
-    # 6. Solar Schemes (Net Metering vs Net Accounting vs Net Plus)
-    if "scheme" in q or "net metering" in q or "net accounting" in q or "net plus" in q:
-        return """### 🇱🇰 Sri Lankan CEB Rooftop Solar Schemes
-
-Sri Lanka offers three statutory schemes under the CEB/LECO *Battle for Solar Energy* program:
-
-| Scheme | Electricity Offset | Compensation for Excess | Best Suited For |
-| :--- | :--- | :--- | :--- |
-| **Net Metering** | 1:1 kWh credit offset against monthly bill | No cash payout; excess banked indefinitely as energy units | High daytime users who want to zero out bills |
-| **Net Accounting** | Offsets monthly bill; surplus energy is exported | Paid in cash at **LKR 44.14/kWh** (≤20 kW) | Average homes aiming to wipe bill and earn revenue |
-| **Net Plus** | Total gross generation exported directly | 100% exported at **LKR 44.14/kWh**; consumption billed separately | Homes with small consumption but large roofs |
-
-*Rates based on CEB RTSPV Flat Feed-in Tariff (Cabinet decision Ref 02-05-2023).*"""
-
-    # 7. Electricity Tariffs & Bill Calculation
-    if "tariff" in q or "bill" in q or "pucsl" in q or "fixed charge" in q or "energy rate" in q:
-        return """### ⚡ PUCSL Domestic Electricity Tariff (Effective Jan 18, 2025)
-
-Sri Lanka uses a tiered block structure:
-
-**Lifeline Tier (≤ 60 kWh/month)**:
-- 0 – 30 units: **LKR 4.00/kWh** (Fixed: LKR 75.00)
-- 31 – 60 units: **LKR 6.00/kWh** (Fixed: LKR 200.00)
-
-**Standard Domestic Tier (> 60 kWh/month)**:
-- 0 – 60 units: **LKR 11.00/kWh**
-- 61 – 90 units: **LKR 14.00/kWh** (Fixed: LKR 400.00)
-- 91 – 120 units: **LKR 20.00/kWh** (Fixed: LKR 1,000.00)
-- 121 – 180 units: **LKR 33.00/kWh** (Fixed: LKR 1,500.00)
-- > 180 units: **LKR 52.00/kWh** (Fixed: LKR 2,000.00)
-
-> [!IMPORTANT]
-> **Condition 3 for Solar Prosumers**: The fixed charge is determined by your **net imported units**, not gross consumption!"""
-
-    # 8. Annual Generation / Yield calculation
-    if "generation" in q or "annual generation" in q or "how is solar calculated" in q or "yield" in q:
-        return """### ☀️ Annual Solar PV Generation Formula
-
-Annual solar generation is calculated as:
-
-$$E_{annual} = P_{actual} \\times Y_{PV} \\times \\eta_{site} \\text{ [kWh/year]}$$
-
-Where:
-- **$P_{actual}$**: Total installed peak capacity in kWp.
-- **$Y_{PV}$**: Specific yield in kWh/kWp/year from Global Solar Atlas v2.0 (accounting for local GHI, temperature, and microclimate).
-- **$\\eta_{site}$**: Site tilt and azimuth correction factor.
-
-For example, a **2.49 kWp** system in Colombo (~1,520 kWh/kWp/yr) produces approximately **3,780 kWh annually** (~315 kWh/month)."""
-
-    # 9. Technical Terms (MPPT, DC/AC, GHI, Losses, Inverter)
-    if "mppt" in q:
-        return """### 🔄 What is MPPT?
-
-**MPPT** stands for **Maximum Power Point Tracking**.
-
-A solar PV module's output voltage and current curve varies continuously with sunlight intensity and ambient temperature.
-- The MPPT algorithm inside the inverter continuously adjusts electrical impedance to locate the point on the $I\\text{-}V$ curve where **$P = V \\times I$ is maximized**.
-- Quality inverters in SolarCalc LK feature dual MPPT trackers, allowing independent optimization for multiple roof orientations."""
-
-    if "loss" in q or "derate" in q:
-        return """### 📉 Solar PV System Losses Modeled by SolarCalc LK
-
-SolarCalc LK applies a realistic aggregate system performance ratio of **75% – 80%**, accounting for:
-
-- **Temperature Losses (8% – 12%)**: High ambient tropical temperatures lower module voltage.
-- **Soiling & Dust (3% – 5%)**: Dust, pollen, and salt deposition on glass.
-- **Inverter Conversion (2.5% – 3.5%)**: DC-to-AC conversion loss.
-- **DC/AC Cabling Losses (2% – 3%)**: Resistance drop in DC solar cables.
-- **Module Mismatch (1.5%)**: Manufacturing variance between connected modules."""
-
-    if "energy balance" in q:
-        return """### ⚖️ Interpreting the Energy Balance
-
-The Energy Balance breaks down your monthly electricity flows:
-1. **Direct Self-Consumption**: Daytime solar energy consumed immediately by household appliances.
-2. **Grid Export**: Surplus daytime generation sent to the CEB grid.
-3. **Grid Import**: Nighttime and rainy day electricity drawn from the grid.
-
-Under Net Accounting, your grid export earns cash credits at LKR 44.14/kWh to offset grid import costs."""
-
-    if "report" in q or "download" in q:
-        return """### 📄 Downloading Your Technical Report
-
-You can generate and download two types of documentation from SolarCalc LK:
-1. **Client Proposal (PDF)**:
-   On the **Results Dashboard** (Step 5 of the Calculator), click the yellow **"Download PDF Proposal"** button. This produces a customized, printable multi-page proposal with electrical specs, 20-year cash flow, and environmental metrics.
-2. **Comprehensive Research Report**:
-   Navigate to the **Reports** tab to download the complete 38-page *SolarCalc LK V1.0 Engineering Technical Report* (PDF and Word formats) and Excel data package."""
-
-    # 10. General Page Explanations
-    if "methodology" in q or page == "/methodology":
-        return """### 📘 About the Methodology Page
-
-The **Methodology** page provides complete peer-review transparency into the 8 core engineering stages of SolarCalc LK:
-1. Global Solar Atlas v2.0 spatial raster querying
-2. Target photovoltaic sizing formulas
-3. Commercial module selection & roof area footprint
-4. Inverter matching and MPPT temperature window verification
-5. PUCSL January 2025 block tariff and Condition 3 logic
-6. CEB Net Metering, Net Accounting, and Net Plus simulations
-7. 20-year cash-flow and simple payback calculations
-8. Avoided carbon emissions and environmental offsets."""
-
-    if "sources" in q or page == "/sources":
-        return """### 📚 About the Sources Page
-
-The **Sources** page documents all primary references used in SolarCalc LK:
-- **PUCSL January 18, 2025 Tariff Document**: Domestic electricity schedules.
-- **CEB RTSPV Gazette (Oct 2023 / Cabinet 02-05-2023)**: 44.14 LKR/kWh feed-in tariff.
-- **World Bank / ESMAP Global Solar Atlas v2.0**: High-resolution PVOUT, GHI, and OPTA rasters.
-- **Manufacturer Engineering Datasheets**: EGing, SunPower, Jinko, Sungrow, GoodWe.
-- **PUCSL Rooftop Solar Installation Guidelines Rev 1**: Technical wiring, protection, and safety."""
-
-    if "how to use" in q or "how does solarcalc work" in q or "calculator" in q:
+    # 4. HOW TO USE / CALCULATOR STEPS
+    if any(k in q_norm for k in ["how to use", "how calculate", "how to calculate", "how do i use", "steps", "calculator", "start"]):
         return """### 🚀 How to Use SolarCalc LK in 5 Simple Steps
 
-1. **Step 1 - Location**: Select your Sri Lankan district (or tap GPS) to load local solar irradiance.
-2. **Step 2 - Consumption**: Enter your average monthly units (kWh) or recent CEB/LECO electricity bill.
-3. **Step 3 - Property**: Specify roof type, usable area, tilt angle, and azimuth direction.
-4. **Step 4 - System**: Choose your rooftop scheme (Net Accounting recommended) and panel model.
-5. **Step 5 - Results Dashboard**: View your custom system capacity, recommended inverter, generation charts, 20-year financial returns, and export a client PDF proposal."""
+1. **Step 1 — Location**: Select your district from the dropdown or tap **🛰️ GPS Auto-Location** to fetch local solar irradiance (PVOUT).
+2. **Step 2 — Electricity Consumption**: Enter your average monthly units (kWh) from your CEB/LECO bill, or enter your monthly bill amount in LKR.
+3. **Step 3 — Roof & Physical Orientation**: Select your roofing material (Clay Tile, Asbestos, Corrugated Zinc, Concrete Slab), enter available area ($m^2$), and specify tilt & azimuth.
+4. **Step 4 — Rooftop Scheme & Equipment**: Choose your CEB scheme (**Net Accounting** recommended for highest cash return) and select a tier-1 PV panel (e.g. JinkoSolar Tiger Neo 470W).
+5. **Step 5 — Results & Proposal**: Review system capacity, string sizing, inverter matching, 20-year savings trajectory, and click **📥 Download PDF Assessment** to save your client proposal!"""
+
+    # 5. BATTERIES / ENERGY STORAGE
+    if any(k in q_norm for k in ["battery", "batteries", "storage", "ess", "lifepo4", "backup", "deye", "huawei luna", "sungrow", "byd"]):
+        return r"""### 🔋 Battery Storage (BESS) for Sri Lankan Solar Systems
+
+SolarCalc LK supports verified residential lithium iron phosphate (**LiFePO4**) battery energy storage systems:
+
+#### Supported Verified Battery Models:
+- **Deye SE-G5.1 Pro-B (Spring Series)**: 5.12 kWh nominal (4.61 kWh usable @ 90% DoD), 51.2V 100Ah, $\ge 6,000$ cycles, modular up to 64 units (327.68 kWh), 10-year warranty.
+- **Huawei LUNA2000-7-S1 (Smart String ESS)**: 6.9 kWh module (100% usable DoD), high-voltage (350V–560V), IP66 outdoor rated, 10-year warranty.
+- **GoodWe Lynx Home U Series LX U5.4-L**: 5.4 kWh nominal (4.86 kWh usable), 51.2V 105Ah, IP65.
+- **Sungrow SBR096 High-Voltage LFP**: 9.6 kWh nominal (100% DoD), 192V, 30A continuous, modular up to 25.6 kWh.
+- **BYD Battery-Box Premium HVM 11.0**: 11.04 kWh usable, 204.8V high-voltage, modular scalable up to 66.2 kWh.
+
+#### How to Add Batteries:
+To add battery storage, pair the system with a **Hybrid Inverter** (such as the Deye SUN-5K-SG04LP1, Sungrow SH5.0RS, Huawei SUN2000-5KTL-L1, or Solis S6-EH1P5K). This ensures uninterrupted power during CEB grid outages."""
+
+    # 6. INVERTER SELECTION & SIZING
+    if any(k in q_norm for k in ["inverter", "why inverter", "mppt", "dc/ac", "clipping", "string"]):
+        inverter = calc.get("inverter_model", "Grid-Tied String Inverter") if calc else "a matched tier-1 inverter"
+        return f"""### ⚡ Inverter Sizing Engineering Methodology
+
+In SolarCalc LK, {inverter} was matched following international IEC 62548 standards:
+
+1. **DC/AC Sizing Ratio (DC-to-AC Ratio Overclocking)**:
+   - Target ratio: **1.10 to 1.35**.
+   - Ensures the inverter operates near maximum efficiency during morning/afternoon low irradiance without excessive clipping at noon.
+2. **Phase Determination**:
+   - $\\le 5\\text{{ kWp}}$ DC: **Single Phase** (230V, standard CEB domestic service).
+   - $> 5\\text{{ kWp}}$ DC: **Three Phase** (400V, required by CEB for larger arrays).
+3. **MPPT Temperature Voltage Window**:
+   - **Extreme Cold (15°C)**: Maximum open-circuit voltage ($V_{{oc}}$) must not exceed the inverter upper DC limit (e.g. 560V or 600V).
+   - **Extreme Hot (65°C Roof Noon)**: Minimum maximum-power voltage ($V_{{mp}}$) must stay above the lower MPPT tracking boundary (e.g. 80V–90V)."""
+
+    # 7. TARIFFS / PUCSL JAN 2025
+    if any(k in q_norm for k in ["tariff", "pucsl", "bill", "rate", "cost", "charge", "fixed charge", "january 2025", "tier", "block", "lifeline"]):
+        return r"""### 🇱🇰 Sri Lanka Domestic Electricity Tariffs (PUCSL Jan 18, 2025)
+
+The Public Utilities Commission of Sri Lanka (PUCSL) implemented the following domestic tariff schedule:
+
+#### 1. Lifeline Tier ($\le 60$ kWh/month):
+| Block | Energy Rate (LKR/kWh) | Fixed Charge (LKR/mo) |
+| :--- | :--- | :--- |
+| **0 – 30 kWh** | LKR 4.00 | LKR 75.00 |
+| **31 – 60 kWh** | LKR 6.00 | LKR 200.00 |
+
+#### 2. General Domestic Tier ($> 60$ kWh/month):
+| Consumption Block | Energy Charge Rate | Monthly Fixed Charge |
+| :--- | :--- | :--- |
+| **Block 1 (0 – 60 kWh)** | LKR 11.00 / kWh | $\le 60\text{ kWh}$: LKR 200.00 |
+| **Block 2 (61 – 90 kWh)** | LKR 14.00 / kWh | $61 - 90\text{ kWh}$: LKR 400.00 |
+| **Block 3 (91 – 120 kWh)** | LKR 20.00 / kWh | $91 - 120\text{ kWh}$: LKR 1,000.00 |
+| **Block 4 (121 – 180 kWh)** | LKR 33.00 / kWh | $121 - 180\text{ kWh}$: LKR 1,500.00 |
+| **Block 5 (Above 180 kWh)** | LKR 52.00 / kWh | $> 180\text{ kWh}$: LKR 2,000.00 |
+
+> [!IMPORTANT]
+> **Condition 3 for Solar Prosumers:** Fixed charges for rooftop solar consumers are levied **strictly on net imported units**, not total gross consumption! If your solar system zeroes out your net units, your fixed charge drops to LKR 0."""
+
+    # 8. CEB SCHEMES (NET METERING / NET ACCOUNTING / NET PLUS)
+    if any(k in q_norm for k in ["scheme", "net metering", "net accounting", "net plus", "feed-in", "feed in", "ceb", "leco", "export rate", "44.14"]):
+        return r"""### 🇱🇰 Sri Lankan CEB Rooftop Solar Schemes
+
+Sri Lanka provides three statutory schemes under the CEB/LECO *Battle for Solar Energy* framework:
+
+| Scheme | Offset Type | Compensation for Excess | Best For |
+| :--- | :--- | :--- | :--- |
+| **Net Accounting** *(Recommended)* | Direct daytime offset | Cash payout at **44.14 LKR/kWh** ($\le 20\text{ kW}$) | Homes with moderate-to-high bills seeking cash revenue |
+| **Net Metering** | 1:1 unit (kWh) offset | Banking of energy credits (no cash payout) | High consumption users who wish to accumulate credits |
+| **Net Plus** | Gross Export | 100% exported at **44.14 LKR/kWh**; consumption billed separately | Low domestic bill properties with large roof space |
+
+*All contracts are established for a 20-year term with CEB or LECO.*"""
+
+    # 9. PAYBACK / ROI / FINANCIALS
+    if any(k in q_norm for k in ["payback", "roi", "savings", "financial", "return", "investment", "cost per kwp"]):
+        if calc and calc.get("payback_years"):
+            return f"""### 💰 Financial Return Analysis for Your System
+- **Estimated Turnkey System Cost**: LKR {calc.get('estimated_system_cost_lkr', 0):,}
+- **Annual Net Economic Benefit**: LKR {calc.get('annual_savings_lkr', 0):,} / year
+- **Simple Payback Period**: **{calc.get('payback_years')} Years**
+- **20-Year Cumulative Savings**: LKR {calc.get('annual_savings_lkr', 0)*20:,} (nominal)
+
+The payback is computed as:
+$$\\text{{Simple Payback}} = \\frac{{\\text{{System Cost (LKR)}}}}{{\\text{{Annual Bill Savings (LKR)}} + \\text{{Annual Export Revenue (LKR)}}}}$$"""
+        return """### 💰 Solar Payback Period in Sri Lanka
+
+In Sri Lanka, residential rooftop solar systems typically achieve a payback period of **3.5 to 5.2 years**, depending on your pre-solar tariff bracket.
+
+Consumers using above 180 units/month pay **LKR 52.00/kWh** to the utility, yielding the fastest payback under Net Accounting (often under 4 years)."""
+
+    # 10. DEVELOPER / UNIVERSITY OF JAFFNA
+    if any(k in q_norm for k in ["developer", "author", "farhan", "jaffna", "who built", "about developer", "university"]):
+        return """### 👨‍💻 About the Developer
+
+**SolarCalc LK V1.0** was conceived, engineered, and developed by:
+
+- **Farhan Mohammad**
+- Undergraduate, Department of Electrical & Electronic Engineering (EEE), **Faculty of Engineering, University of Jaffna** (E23 Batch).
+- Engineering Focus: Renewable energy integration, power system simulation, and spatial resource modeling.
+
+For academic or technical inquiries, check the **`About Developer`** tab in the navigation bar!"""
+
+    # 11. SOLAR MAP & RESOURCE
+    if any(k in q_norm for k in ["solar map", "solar resource", "ghi", "pvout", "irradiance", "atlas"]):
+        return """### 🗺️ Solar Map & Solar Resource Engine
+
+The **Solar Map** tab allows you to visualize solar irradiance across all 25 districts of Sri Lanka:
+- **PVOUT (Photovoltaic Power Potential)**: 1,350 to 1,650 kWh/kWp/year.
+- **Top Districts for Solar Yield**: Mannar (1,650), Hambantota (1,620), Batticaloa (1,610), Jaffna (1,580), and Puttalam (1,580).
+- **Optimum Tilt Angle**: 7° to 10° facing True South (180° Azimuth).
+- **Primary Spatial Dataset**: World Bank / ESMAP Global Solar Atlas (GSA v2.0) 30-arc-second (~1 km) microclimatic rasters."""
+
+    # 12. SOLAR TERMINOLOGY (kWp, kWh, PVOUT)
+    if any(k in q_norm for k in ["kwp", "kwh", "what is kwp", "what is kwh"]):
+        return """### ⚡ Solar PV Terminology: kWp vs kWh
+
+- **kWp (Kilowatt-Peak / kilowatt-peak)**: The nominal maximum electrical power output an array produces under standard test conditions (STC: 1,000 W/m² irradiance, 25°C cell temperature, AM 1.5 spectrum). It represents system **capacity** or size.
+- **kWh (Kilowatt-Hour)**: The actual amount of energy generated or consumed over time (1 kWh = 1 unit on your CEB/LECO bill).
+- **Specific Yield (kWh/kWp/year)**: In Sri Lanka, 1 kWp of solar produces approximately **1,350 to 1,650 kWh** of usable electricity each year depending on the district."""
 
     # Default technical fallback
-    return """Hello! I am **SolarCalc AI**, the engineering technical assistant for SolarCalc LK.
+    return """Hello! I am **SolarCalc AI**, the technical engineering assistant for SolarCalc LK.
 
-I can assist you with:
-- Explaining your **calculation results** and system sizing (kWp, modules, inverter)
-- **PUCSL January 2025 tariffs** and electricity bill savings
-- CEB **Net Metering vs Net Accounting vs Net Plus**
-- Technical terms like **kWp, MPPT, DC/AC ratio, and system losses**
-- Guidance on the **Methodology**, **Sources**, and downloading your technical report
+I can help you with:
+- 📥 **How to download reports** (Preliminary Proposal PDF or 25-section Technical Report)
+- 📊 **Explaining your calculation results** (System size, modules, inverter, payback)
+- 🛰️ **Using GPS Auto-Location** to fetch district solar yields
+- 🇱🇰 **PUCSL January 2025 tariffs** and Condition 3 net fixed charge rules
+- ⚡ **CEB Net Metering vs Net Accounting vs Net Plus**
+- 🔋 **Battery storage (ESS)** and hybrid inverters (Deye, Huawei, Sungrow)
+- ⚙️ **Inverter sizing**, DC/AC ratio, and MPPT temperature safety limits
 
-If you have completed a calculation, ask me *"Explain my results"* or *"Why was this inverter selected?"*!"""
+What would you like to know?"""
 
 
-def process_chat_message(message: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+def process_chat_message(
+    message: str,
+    context: Optional[Dict[str, Any]] = None,
+    user_api_key: Optional[str] = None,
+    provider: Optional[str] = "auto"
+) -> Dict[str, str]:
     """
     Main entry point for processing AI Assistant queries.
-    Validates input, checks for external LLM, and falls back to grounded engine.
+    Priority order:
+    1. User-supplied Gemini or OpenAI API key (from frontend modal)
+    2. Server environment GEMINI_API_KEY / GOOGLE_API_KEY
+    3. Server environment AI_API_KEY (OpenAI / Groq / OpenRouter)
+    4. Intelligent grounded engineering knowledge base
     """
     cleaned_message = (message or "").strip()
     if not cleaned_message:
         return {
-            "answer": "Please ask a question regarding residential solar PV planning, tariffs, or SolarCalc LK.",
+            "answer": "Please ask a question regarding residential solar PV planning, tariffs, reports, or SolarCalc LK.",
             "source": "SolarCalc LK Engineering Knowledge Base"
         }
 
-    # Input length protection
     if len(cleaned_message) > 1000:
         cleaned_message = cleaned_message[:1000]
 
     context_str = _format_context(context)
 
-    # 1. Try external LLM if configured
-    llm_response = _call_external_llm(cleaned_message, context_str)
-    if llm_response:
-        return {
-            "answer": llm_response,
-            "source": "SolarCalc AI (Grounded Model)"
-        }
+    # 1. Check user-supplied key or server Gemini key
+    gemini_key = user_api_key if (user_api_key and user_api_key.startswith("AIza")) else (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
+    if gemini_key:
+        ans = _call_gemini_api(gemini_key, cleaned_message, context_str)
+        if ans:
+            return {
+                "answer": ans,
+                "source": "Google Gemini 1.5 Flash (Grounded on SolarCalc LK)"
+            }
 
-    # 2. Use built-in engineering inference engine
+    # 2. Check OpenAI-compatible key
+    openai_key = user_api_key if (user_api_key and not user_api_key.startswith("AIza")) else os.environ.get("AI_API_KEY")
+    if openai_key:
+        ans = _call_openai_api(openai_key, cleaned_message, context_str)
+        if ans:
+            return {
+                "answer": ans,
+                "source": "SolarCalc AI (External LLM)"
+            }
+
+    # 3. Built-in grounded engineering inference engine
     grounded_answer = _generate_grounded_response(cleaned_message, context)
     return {
         "answer": grounded_answer,

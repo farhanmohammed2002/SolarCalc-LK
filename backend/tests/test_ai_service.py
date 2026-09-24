@@ -48,5 +48,22 @@ class TestAIService(unittest.TestCase):
         self.assertIn("4.36 years", res["answer"])
         self.assertIn("Kandy", res["answer"])
 
+    def test_download_report_query(self):
+        res1 = process_chat_message("how to download report")
+        self.assertIn("Download PDF Assessment", res1["answer"])
+        self.assertIn("Reports", res1["answer"])
+
+        # Test typo handling (user's exact typo: "how to dwload report")
+        res2 = process_chat_message("how to dwload report")
+        self.assertIn("Download PDF Assessment", res2["answer"])
+
+    def test_gps_and_battery_queries(self):
+        res_gps = process_chat_message("how does gps auto location work?")
+        self.assertIn("GPS Auto-Location", res_gps["answer"])
+
+        res_bat = process_chat_message("Can I add batteries?")
+        self.assertIn("LiFePO4", res_bat["answer"])
+        self.assertIn("Deye", res_bat["answer"])
+
 if __name__ == "__main__":
     unittest.main()
