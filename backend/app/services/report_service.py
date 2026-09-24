@@ -5,7 +5,7 @@ Produces client-ready technical engineering proposals tailored to Sri Lankan con
 
 import io, os
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
@@ -24,20 +24,18 @@ def generate_pdf_assessment(calc_result: dict) -> io.BytesIO:
     title_style = ParagraphStyle(
         'DocTitle',
         parent=styles['Heading1'],
-        fontSize=20,
-        leading=24,
+        fontSize=18,
+        leading=22,
         textColor=colors.HexColor('#1E3A8A'),
-        alignment=1,
-        spaceAfter=4
+        fontName='Helvetica-Bold',
+        spaceAfter=2
     )
     sub_style = ParagraphStyle(
         'DocSub',
         parent=styles['Normal'],
-        fontSize=10,
-        leading=14,
-        textColor=colors.HexColor('#4B5563'),
-        alignment=1,
-        spaceAfter=12
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor('#4B5563')
     )
     sec_style = ParagraphStyle(
         'DocSec',
@@ -63,14 +61,39 @@ def generate_pdf_assessment(calc_result: dict) -> io.BytesIO:
     
     story = []
     
-    # Title & Header
-    story.append(Paragraph("SolarCalc LK V1.0 — Preliminary Solar PV Assessment", title_style))
-    story.append(Paragraph(
-        f"Prepared for property in <b>{calc_result['inputs']['district']}</b> | "
-        f"Regulatory Baseline: <b>PUCSL Jan 18, 2025 Tariff</b> & <b>CEB Feed-in Schemes</b>",
-        sub_style
-    ))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#1E3A8A'), spaceAfter=10))
+    # Title & Header with Report Logo
+    logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "report_logo.png")
+    district = calc_result.get('inputs', {}).get('district', 'Sri Lanka')
+    
+    if os.path.exists(logo_path):
+        logo_img = Image(logo_path, width=100, height=50)
+        title_block = [
+            Paragraph("SolarCalc LK V1.0 — Preliminary Solar PV Assessment", title_style),
+            Paragraph(
+                f"Prepared for Property in <b>{district}</b> | Baseline: <b>PUCSL Jan 18, 2025 Tariff & CEB Schemes</b>",
+                sub_style
+            ),
+            Paragraph(
+                "National Renewable Energy Laboratory & Global Solar Atlas (GSA v2.0) Verification Model",
+                ParagraphStyle('DocSubMini', parent=styles['Normal'], fontSize=7.5, leading=10, textColor=colors.HexColor('#6B7280'))
+            )
+        ]
+        hdr_table = Table([[logo_img, title_block]], colWidths=[110, 430])
+        hdr_table.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('ALIGN', (0,0), (0,0), 'LEFT'),
+            ('PADDING', (0,0), (-1,-1), 0),
+        ]))
+        story.append(hdr_table)
+        story.append(Spacer(1, 6))
+    else:
+        story.append(Paragraph("SolarCalc LK V1.0 — Preliminary Solar PV Assessment", title_style))
+        story.append(Paragraph(
+            f"Prepared for property in <b>{district}</b> | "
+            f"Regulatory Baseline: <b>PUCSL Jan 18, 2025 Tariff</b> & <b>CEB Feed-in Schemes</b>",
+            sub_style
+        ))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#1E3A8A'), spaceAfter=8))
     
     # Executive Highlights Table
     system = calc_result.get("system", {})

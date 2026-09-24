@@ -11,10 +11,34 @@ import { FaqPage } from './pages/FaqPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
+import { AIAssistantPage } from './pages/AIAssistantPage';
+import { FloatingAIButton } from './components/ai/FloatingAIButton';
+import { CalculationResult } from './types/solar';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
   const [calcDistrict, setCalcDistrict] = useState<string>('Colombo');
+  const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(() => {
+    const saved = sessionStorage.getItem('solarcalc_latest_result');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return null;
+  });
+  const [aiInitialPrompt, setAiInitialPrompt] = useState<string | undefined>(undefined);
+
+  const handleCalculationComplete = (res: CalculationResult) => {
+    setCalculationResult(res);
+    try {
+      sessionStorage.setItem('solarcalc_latest_result', JSON.stringify(res));
+    } catch (e) {}
+  };
+
+  const handleAskAi = (prompt?: string) => {
+    setAiInitialPrompt(prompt);
+    setActiveTab('ai-assistant');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleStartCalculator = () => {
     setActiveTab('calculator');
@@ -42,7 +66,11 @@ export function App() {
         )}
 
         {activeTab === 'calculator' && (
-          <CalculatorPage initialDistrictName={calcDistrict} />
+          <CalculatorPage
+            initialDistrictName={calcDistrict}
+            onAskAi={handleAskAi}
+            onCalculationComplete={handleCalculationComplete}
+          />
         )}
 
         {activeTab === 'map' && (
@@ -55,6 +83,14 @@ export function App() {
 
         {activeTab === 'sources' && (
           <SourcesPage />
+        )}
+
+        {activeTab === 'ai-assistant' && (
+          <AIAssistantPage
+            calculationResult={calculationResult}
+            onNavigateTab={setActiveTab}
+            initialPrompt={aiInitialPrompt}
+          />
         )}
 
         {activeTab === 'about' && (
@@ -80,6 +116,17 @@ export function App() {
 
       {/* Footer */}
       <Footer setActiveTab={setActiveTab} />
+
+      {/* Floating SolarCalc AI Assistant */}
+      <FloatingAIButton
+        activePage={activeTab}
+        calculationResult={calculationResult}
+        onOpenFullAssistant={() => {
+          setAiInitialPrompt(undefined);
+          setActiveTab('ai-assistant');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
     </div>
   );
 }

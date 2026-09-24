@@ -147,24 +147,33 @@ export const StepSystem: React.FC<StepSystemProps> = ({
             </div>
 
             {/* Hardware Photos Preview */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="grid grid-cols-3 gap-2 pt-1">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-center space-y-1">
                 <img
                   src="/images/solar panel.jpg"
                   alt="Tier-1 Monocrystalline Solar Panel"
-                  className="w-full h-20 object-contain mx-auto"
+                  className="w-full h-16 object-contain mx-auto"
                 />
-                <span className="block text-[10px] font-bold text-slate-700">Tier-1 Half-Cell PV</span>
-                <span className="block text-[9px] text-slate-500">21.2% Efficiency</span>
+                <span className="block text-[10px] font-bold text-slate-700">Tier-1 PV Module</span>
+                <span className="block text-[9px] text-slate-500">Up to 24.3% Eff</span>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-center space-y-1">
                 <img
                   src="/images/inverter.png"
                   alt="On-Grid String Solar Inverter"
-                  className="w-full h-20 object-contain mx-auto"
+                  className="w-full h-16 object-contain mx-auto"
                 />
-                <span className="block text-[10px] font-bold text-slate-700">Grid-Tie String Inverter</span>
+                <span className="block text-[10px] font-bold text-slate-700">Inverter</span>
                 <span className="block text-[9px] text-slate-500">98.4% Efficiency</span>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-center space-y-1">
+                <img
+                  src="/images/battery for solar.png"
+                  alt="Solar Battery Storage LiFePO4"
+                  className="w-full h-16 object-contain mx-auto"
+                />
+                <span className="block text-[10px] font-bold text-slate-700">LiFePO4 ESS</span>
+                <span className="block text-[9px] text-slate-500">Battery Ready</span>
               </div>
             </div>
 

@@ -10,9 +10,15 @@ import { SRI_LANKA_DISTRICTS, executeSolarCalculationClient } from '../utils/sol
 
 interface CalculatorPageProps {
   initialDistrictName?: string;
+  onAskAi?: (prompt?: string) => void;
+  onCalculationComplete?: (result: CalculationResult) => void;
 }
 
-export const CalculatorPage: React.FC<CalculatorPageProps> = ({ initialDistrictName }) => {
+export const CalculatorPage: React.FC<CalculatorPageProps> = ({
+  initialDistrictName,
+  onAskAi,
+  onCalculationComplete
+}) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [maxReachedStep, setMaxReachedStep] = useState(1);
 
@@ -70,15 +76,18 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ initialDistrictN
       if (res.ok) {
         const data = await res.json();
         setResult(data);
+        onCalculationComplete?.(data);
       } else {
         // Fallback to client calculation engine
         const clientRes = executeSolarCalculationClient(req);
         setResult(clientRes);
+        onCalculationComplete?.(clientRes);
       }
     } catch (err) {
       // Offline / standalone client calculation engine
       const clientRes = executeSolarCalculationClient(req);
       setResult(clientRes);
+      onCalculationComplete?.(clientRes);
     }
 
     handleNext(5);
@@ -145,6 +154,7 @@ export const CalculatorPage: React.FC<CalculatorPageProps> = ({ initialDistrictN
         <StepResults
           result={result}
           onModify={() => setCurrentStep(4)}
+          onAskAi={onAskAi}
         />
       )}
     </div>

@@ -48,7 +48,7 @@ jobs:
           cd backend
           pip install -r requirements.txt
 
-      - name: Run automated calculation tests
+      - name: Run automated calculation & AI service tests
         run: |
           cd backend
-          python tests/test_calculations.py
+          python -m unittest discover tests

@@ -1,4 +1,4 @@
-import { DistrictLocation, PanelModel, InverterModel, CalculationRequest, CalculationResult } from '../types/solar';
+import { DistrictLocation, PanelModel, InverterModel, BatteryModel, CalculationRequest, CalculationResult } from '../types/solar';
 
 // Pre-extracted 25 Sri Lankan Districts from Global Solar Atlas v2.0
 export const SRI_LANKA_DISTRICTS: DistrictLocation[] = [
@@ -30,21 +30,149 @@ export const SRI_LANKA_DISTRICTS: DistrictLocation[] = [
 ];
 
 export const VERIFIED_PANELS: PanelModel[] = [
-  { id: 1, manufacturer: 'EGing PV', model: 'EG-415M54-HL (182mm Half-Cell)', rated_power_w: 415, efficiency_pct: 21.25, voc_v: 37.50, isc_a: 13.91, vmp_v: 31.50, imp_a: 13.18, temp_coeff_pmp: -0.35, length_mm: 1722, width_mm: 1134, weight_kg: 20.2, warranty_years: 15, is_bifacial: false, datasheet_source: '415W-EGing-Datasheet.pdf' },
-  { id: 2, manufacturer: 'EGing PV', model: 'EG-400M54-HL (182mm Half-Cell)', rated_power_w: 400, efficiency_pct: 20.48, voc_v: 37.10, isc_a: 13.72, vmp_v: 31.10, imp_a: 12.87, temp_coeff_pmp: -0.35, length_mm: 1722, width_mm: 1134, weight_kg: 20.2, warranty_years: 15, is_bifacial: false, datasheet_source: 'EG400M54-HL-182-Cell.pdf' },
-  { id: 3, manufacturer: 'SunPower', model: 'Maxeon 5 415W Premium', rated_power_w: 415, efficiency_pct: 22.20, voc_v: 74.30, isc_a: 6.97, vmp_v: 62.80, imp_a: 6.61, temp_coeff_pmp: -0.29, length_mm: 1812, width_mm: 1032, weight_kg: 21.0, warranty_years: 25, is_bifacial: false, datasheet_source: 'Sunpower-415W-Maxeon-5.pdf' },
-  { id: 4, manufacturer: 'BiMAX / SunEvo', model: 'BiMAX5N-108 Dual-Glass 430W', rated_power_w: 430, efficiency_pct: 22.02, voc_v: 38.60, isc_a: 14.14, vmp_v: 32.24, imp_a: 13.34, temp_coeff_pmp: -0.30, length_mm: 1722, width_mm: 1134, weight_kg: 24.5, warranty_years: 25, is_bifacial: true, datasheet_source: 'BiMAX5N-108-Half-Cells-Bifacial-Dual-Glass-410-440W.pdf' },
-  { id: 5, manufacturer: 'Hanwha Qcells', model: 'Q.MAXX-G2 350W Mono', rated_power_w: 350, efficiency_pct: 19.30, voc_v: 40.35, isc_a: 10.42, vmp_v: 33.56, imp_a: 9.94, temp_coeff_pmp: -0.35, length_mm: 1740, width_mm: 1030, weight_kg: 19.9, warranty_years: 12, is_bifacial: false, datasheet_source: 'Qcells-QMAXX-G2-350W.pdf' },
-  { id: 6, manufacturer: 'SunPower', model: 'Performance 3 480W Commercial', rated_power_w: 480, efficiency_pct: 20.60, voc_v: 54.50, isc_a: 11.23, vmp_v: 45.20, imp_a: 10.62, temp_coeff_pmp: -0.34, length_mm: 2066, width_mm: 1160, weight_kg: 25.0, warranty_years: 25, is_bifacial: true, datasheet_source: 'Sunpower-SPR-P3-480-UPP.pdf' }
+  { id: 1, manufacturer: 'JinkoSolar', model: 'Tiger Neo JKM470N-48HL4M-BDV (Bifacial)', rated_power_w: 470, efficiency_pct: 23.52, voc_v: 36.87, isc_a: 15.85, vmp_v: 31.46, imp_a: 14.94, temp_coeff_pmp: -0.29, length_mm: 1762, width_mm: 1134, weight_kg: 24.0, warranty_years: 15, is_bifacial: true, datasheet_source: 'JKM445-470N-48HL4M-BDV-Z2-EN.pdf' },
+  { id: 2, manufacturer: 'JinkoSolar', model: 'Tiger Neo JKM475N-48HL4M-DB (Dual-Glass)', rated_power_w: 475, efficiency_pct: 23.77, voc_v: 37.04, isc_a: 15.90, vmp_v: 31.70, imp_a: 14.99, temp_coeff_pmp: -0.29, length_mm: 1762, width_mm: 1134, weight_kg: 24.0, warranty_years: 25, is_bifacial: true, datasheet_source: 'JKM450-475N-48HL4M-DB-Z3-EN.pdf' },
+  { id: 3, manufacturer: 'REC Group', model: 'Alpha Pure-RX 470W Heterojunction (HJT)', rated_power_w: 470, efficiency_pct: 22.60, voc_v: 65.60, isc_a: 9.12, vmp_v: 55.40, imp_a: 8.49, temp_coeff_pmp: -0.24, length_mm: 1730, width_mm: 1118, weight_kg: 20.6, warranty_years: 25, is_bifacial: false, datasheet_source: 'Web_DS_REC Alpha Pure-RX_EN US_042025.pdf' },
+  { id: 4, manufacturer: 'LONGi Solar', model: 'Hi-MO X6 LR7-60HVH-550M (HPBC/TOPCon)', rated_power_w: 550, efficiency_pct: 22.60, voc_v: 50.15, isc_a: 13.90, vmp_v: 42.25, imp_a: 13.02, temp_coeff_pmp: -0.28, length_mm: 2278, width_mm: 1134, weight_kg: 27.2, warranty_years: 15, is_bifacial: false, datasheet_source: 'LR_7_60_HVH_535_560_M_V1_0_ee51fac8f9.pdf' },
+  { id: 5, manufacturer: 'JinkoSolar', model: 'Tiger Neo JKM545N-54QL6-DV (Commercial)', rated_power_w: 545, efficiency_pct: 24.28, voc_v: 39.81, isc_a: 17.38, vmp_v: 34.05, imp_a: 16.01, temp_coeff_pmp: -0.26, length_mm: 1980, width_mm: 1134, weight_kg: 27.5, warranty_years: 15, is_bifacial: true, datasheet_source: 'JKM525-545N-54QL6-DV-F1-EN.pdf' },
+  { id: 6, manufacturer: 'JinkoSolar', model: 'Tiger Neo JKM630N-66HL4M-BDV (Bifacial)', rated_power_w: 630, efficiency_pct: 23.32, voc_v: 48.96, isc_a: 16.32, vmp_v: 41.56, imp_a: 15.16, temp_coeff_pmp: -0.29, length_mm: 2382, width_mm: 1134, weight_kg: 32.4, warranty_years: 15, is_bifacial: true, datasheet_source: 'JKM605-630N-66HL4M-BDV-F6-EN.pdf' },
+  { id: 7, manufacturer: 'EGing PV', model: 'EG-415M54-HL (182mm Half-Cell)', rated_power_w: 415, efficiency_pct: 21.25, voc_v: 37.50, isc_a: 13.91, vmp_v: 31.50, imp_a: 13.18, temp_coeff_pmp: -0.35, length_mm: 1722, width_mm: 1134, weight_kg: 20.2, warranty_years: 15, is_bifacial: false, datasheet_source: '415W-EGing-Datasheet.pdf' },
+  { id: 8, manufacturer: 'SunPower', model: 'Maxeon 5 415W Premium', rated_power_w: 415, efficiency_pct: 22.20, voc_v: 74.30, isc_a: 6.97, vmp_v: 62.80, imp_a: 6.61, temp_coeff_pmp: -0.29, length_mm: 1812, width_mm: 1032, weight_kg: 21.0, warranty_years: 25, is_bifacial: false, datasheet_source: 'Sunpower-415W-Maxeon-5.pdf' },
+  { id: 9, manufacturer: 'BiMAX / SunEvo', model: 'BiMAX5N-108 Dual-Glass 430W', rated_power_w: 430, efficiency_pct: 22.02, voc_v: 38.60, isc_a: 14.14, vmp_v: 32.24, imp_a: 13.34, temp_coeff_pmp: -0.30, length_mm: 1722, width_mm: 1134, weight_kg: 24.5, warranty_years: 25, is_bifacial: true, datasheet_source: 'BiMAX5N-108-Half-Cells-Bifacial-Dual-Glass-410-440W.pdf' },
+  { id: 10, manufacturer: 'Hanwha Qcells', model: 'Q.MAXX-G2 350W Mono', rated_power_w: 350, efficiency_pct: 19.30, voc_v: 40.35, isc_a: 10.42, vmp_v: 33.56, imp_a: 9.94, temp_coeff_pmp: -0.35, length_mm: 1740, width_mm: 1030, weight_kg: 19.9, warranty_years: 12, is_bifacial: false, datasheet_source: 'Qcells-QMAXX-G2-350W.pdf' }
 ];
 
 export const VERIFIED_INVERTERS: InverterModel[] = [
   { id: 1, manufacturer: 'Sungrow', model: 'SG3K-D (Single Phase)', rated_ac_power_kw: 3.0, max_pv_power_kw: 4.5, mppt_voltage_min_v: 90, mppt_voltage_max_v: 560, max_input_current_a: 12.5, mppt_count: 2, phase: 1, max_efficiency_pct: 98.4, euro_efficiency_pct: 97.7, warranty_years: 5, datasheet_source: 'SG3K-D_SG5K-D-Datasheet_EN-Premium.pdf' },
   { id: 2, manufacturer: 'Sungrow', model: 'SG5K-D (Single Phase)', rated_ac_power_kw: 5.0, max_pv_power_kw: 7.5, mppt_voltage_min_v: 90, mppt_voltage_max_v: 560, max_input_current_a: 12.5, mppt_count: 2, phase: 1, max_efficiency_pct: 98.4, euro_efficiency_pct: 97.7, warranty_years: 5, datasheet_source: 'SG3K-D_SG5K-D-Datasheet_EN-Premium.pdf' },
-  { id: 3, manufacturer: 'GoodWe', model: 'GW5000D-NS (Single Phase)', rated_ac_power_kw: 5.0, max_pv_power_kw: 6.5, mppt_voltage_min_v: 80, mppt_voltage_max_v: 550, max_input_current_a: 11.0, mppt_count: 2, phase: 1, max_efficiency_pct: 97.8, euro_efficiency_pct: 97.5, warranty_years: 5, datasheet_source: 'Goodwe-5kW-GW5000D-NS.pdf' },
-  { id: 4, manufacturer: 'SOFAR Solar', model: 'SOFAR 3KTL-G2 (Single Phase)', rated_ac_power_kw: 3.0, max_pv_power_kw: 3.99, mppt_voltage_min_v: 160, mppt_voltage_max_v: 960, max_input_current_a: 11.0, mppt_count: 2, phase: 1, max_efficiency_pct: 98.2, euro_efficiency_pct: 97.5, warranty_years: 5, datasheet_source: 'SOFAR-single-phase-3-7.5kw-1.pdf' },
-  { id: 5, manufacturer: 'GoodWe', model: 'GW10KL-DT (Three Phase)', rated_ac_power_kw: 10.0, max_pv_power_kw: 15.0, mppt_voltage_min_v: 180, mppt_voltage_max_v: 850, max_input_current_a: 12.5, mppt_count: 2, phase: 3, max_efficiency_pct: 98.3, euro_efficiency_pct: 97.8, warranty_years: 5, datasheet_source: 'Goodwe-10kW-GW10KL-DT.pdf' },
-  { id: 6, manufacturer: 'Solis Ginlong', model: 'S6-EH1P5K-L-EU (Hybrid Ready)', rated_ac_power_kw: 5.0, max_pv_power_kw: 8.0, mppt_voltage_min_v: 90, mppt_voltage_max_v: 520, max_input_current_a: 15.0, mppt_count: 2, phase: 1, max_efficiency_pct: 97.6, euro_efficiency_pct: 97.0, warranty_years: 5, datasheet_source: 'Solis_datasheet_S6-EH1P(3-6)K-L-EU_Global.pdf' }
+  { id: 3, manufacturer: 'Huawei', model: 'SUN2000-5KTL-L1 (Battery-Ready)', rated_ac_power_kw: 5.0, max_pv_power_kw: 7.5, mppt_voltage_min_v: 90, mppt_voltage_max_v: 560, max_input_current_a: 12.5, mppt_count: 2, phase: 1, max_efficiency_pct: 98.4, euro_efficiency_pct: 97.8, warranty_years: 10, datasheet_source: 'SUN2000-3_5KTL-L1.pdf' },
+  { id: 4, manufacturer: 'Deye', model: 'SUN-5K-SG04LP1-EU-SM2 (LV Hybrid)', rated_ac_power_kw: 5.0, max_pv_power_kw: 6.5, mppt_voltage_min_v: 125, mppt_voltage_max_v: 425, max_input_current_a: 13.0, mppt_count: 2, phase: 1, max_efficiency_pct: 97.6, euro_efficiency_pct: 96.5, warranty_years: 5, datasheet_source: 'BDatasheetSUN-3-6K-SG04LP1-SM220260424en.pdf' },
+  { id: 5, manufacturer: 'Sungrow', model: 'SH5.0RS (HV Hybrid Energy Storage)', rated_ac_power_kw: 5.0, max_pv_power_kw: 10.0, mppt_voltage_min_v: 80, mppt_voltage_max_v: 560, max_input_current_a: 16.0, mppt_count: 2, phase: 1, max_efficiency_pct: 97.7, euro_efficiency_pct: 97.2, warranty_years: 10, datasheet_source: 'DS_20220623_SH5.0_6.0RS_Datasheet_V10_EN(AU).pdf' },
+  { id: 6, manufacturer: 'SMA Solar', model: 'Sunny Boy 5.0 (SB5.0-1AV-41)', rated_ac_power_kw: 5.0, max_pv_power_kw: 7.5, mppt_voltage_min_v: 175, mppt_voltage_max_v: 500, max_input_current_a: 15.0, mppt_count: 2, phase: 1, max_efficiency_pct: 97.0, euro_efficiency_pct: 96.5, warranty_years: 10, datasheet_source: 'SB30-60-DS-AU-61.pdf' },
+  { id: 7, manufacturer: 'Fronius', model: 'Primo GEN24 5.0 Plus (Single Phase Hybrid)', rated_ac_power_kw: 5.0, max_pv_power_kw: 7.5, mppt_voltage_min_v: 65, mppt_voltage_max_v: 530, max_input_current_a: 22.0, mppt_count: 2, phase: 1, max_efficiency_pct: 97.6, euro_efficiency_pct: 97.1, warranty_years: 5, datasheet_source: 'SE_DS_Fronius_Primo_GEN24_GEN24Plus_3_to_6_kW_EN.pdf' },
+  { id: 8, manufacturer: 'GoodWe', model: 'GW5000D-NS (Single Phase Dual-MPPT)', rated_ac_power_kw: 5.0, max_pv_power_kw: 6.5, mppt_voltage_min_v: 80, mppt_voltage_max_v: 550, max_input_current_a: 11.0, mppt_count: 2, phase: 1, max_efficiency_pct: 97.8, euro_efficiency_pct: 97.5, warranty_years: 5, datasheet_source: 'Goodwe-5kW-GW5000D-NS.pdf' },
+  { id: 9, manufacturer: 'SOFAR Solar', model: 'SOFAR 3KTL-G2 (Single Phase)', rated_ac_power_kw: 3.0, max_pv_power_kw: 3.99, mppt_voltage_min_v: 160, mppt_voltage_max_v: 960, max_input_current_a: 11.0, mppt_count: 2, phase: 1, max_efficiency_pct: 98.2, euro_efficiency_pct: 97.5, warranty_years: 5, datasheet_source: 'SOFAR-single-phase-3-7.5kw-1.pdf' },
+  { id: 10, manufacturer: 'GoodWe', model: 'GW10KL-DT (Three Phase Dual-MPPT)', rated_ac_power_kw: 10.0, max_pv_power_kw: 15.0, mppt_voltage_min_v: 180, mppt_voltage_max_v: 850, max_input_current_a: 12.5, mppt_count: 2, phase: 3, max_efficiency_pct: 98.3, euro_efficiency_pct: 97.8, warranty_years: 5, datasheet_source: 'Goodwe-10kW-GW10KL-DT.pdf' },
+  { id: 11, manufacturer: 'GoodWe', model: 'ET 29.9K (Three Phase Hybrid Commercial)', rated_ac_power_kw: 29.9, max_pv_power_kw: 45.0, mppt_voltage_min_v: 200, mppt_voltage_max_v: 850, max_input_current_a: 30.0, mppt_count: 3, phase: 3, max_efficiency_pct: 98.1, euro_efficiency_pct: 97.5, warranty_years: 5, datasheet_source: 'GW_ET-25-50kW_Datasheet-EN.pdf' },
+  { id: 12, manufacturer: 'Solis Ginlong', model: 'S6-EH1P5K-L-EU (Hybrid Ready)', rated_ac_power_kw: 5.0, max_pv_power_kw: 8.0, mppt_voltage_min_v: 90, mppt_voltage_max_v: 520, max_input_current_a: 15.0, mppt_count: 2, phase: 1, max_efficiency_pct: 97.6, euro_efficiency_pct: 97.0, warranty_years: 5, datasheet_source: 'Solis_datasheet_S6-EH1P(3-6)K-L-EU_Global.pdf' }
+];
+
+export const VERIFIED_BATTERIES: BatteryModel[] = [
+  {
+    id: 1,
+    manufacturer: 'Deye',
+    model: 'SE-G5.1 Pro-B (Spring Series)',
+    chemistry: 'LiFePO4 (Cobalt-Free)',
+    nominal_voltage_v: 51.2,
+    operating_voltage_min_v: 43.2,
+    operating_voltage_max_v: 57.6,
+    nominal_capacity_ah: 100,
+    total_energy_kwh: 5.12,
+    usable_energy_kwh: 4.61,
+    dod_pct: 90,
+    max_charge_current_a: 100,
+    max_discharge_current_a: 100,
+    cycle_life: 6000,
+    max_parallel_units: 64,
+    ip_rating: 'IP20',
+    dimensions_mm: '440 × 133 × 540',
+    weight_kg: 45.0,
+    warranty_years: 10,
+    compatible_inverters: ['Deye SUN-3/5/6K-SG04', 'Solis S6-EH1P', 'Victron', 'GoodWe LV'],
+    datasheet_source: 'Deye-SE-G5.1-Pro-B-Series_Brochure_AU_20260907V1.0.pdf'
+  },
+  {
+    id: 2,
+    manufacturer: 'Huawei',
+    model: 'LUNA2000-7-S1 (Smart String ESS)',
+    chemistry: 'LiFePO4',
+    nominal_voltage_v: 385.0,
+    operating_voltage_min_v: 350.0,
+    operating_voltage_max_v: 560.0,
+    nominal_capacity_ah: 18,
+    total_energy_kwh: 6.9,
+    usable_energy_kwh: 6.9,
+    dod_pct: 100,
+    max_charge_current_a: 10,
+    max_discharge_current_a: 10,
+    cycle_life: 6000,
+    max_parallel_units: 4,
+    ip_rating: 'IP66',
+    dimensions_mm: '590 × 255 × 360',
+    weight_kg: 68.0,
+    warranty_years: 10,
+    compatible_inverters: ['Huawei SUN2000-2/3/4/5/6KTL-L1', 'SUN2000-8/10KTL-M1'],
+    datasheet_source: 'LUNA2000-7_14_21-S1.pdf'
+  },
+  {
+    id: 3,
+    manufacturer: 'GoodWe',
+    model: 'Lynx Home U Series LX U5.4-L',
+    chemistry: 'LiFePO4',
+    nominal_voltage_v: 51.2,
+    operating_voltage_min_v: 47.5,
+    operating_voltage_max_v: 57.6,
+    nominal_capacity_ah: 105,
+    total_energy_kwh: 5.4,
+    usable_energy_kwh: 4.86,
+    dod_pct: 90,
+    max_charge_current_a: 50,
+    max_discharge_current_a: 50,
+    cycle_life: 6000,
+    max_parallel_units: 6,
+    ip_rating: 'IP65',
+    dimensions_mm: '505 × 175 × 570',
+    weight_kg: 57.0,
+    warranty_years: 10,
+    compatible_inverters: ['GoodWe ES', 'GoodWe EM', 'GoodWe SBP'],
+    datasheet_source: 'GW_Lynx Home U Series (LV)_5.4-20_Datasheet-AU.pdf'
+  },
+  {
+    id: 4,
+    manufacturer: 'Sungrow',
+    model: 'SBR096 (High-Voltage LFP Battery)',
+    chemistry: 'LiFePO4',
+    nominal_voltage_v: 192.0,
+    operating_voltage_min_v: 150.0,
+    operating_voltage_max_v: 219.0,
+    nominal_capacity_ah: 50,
+    total_energy_kwh: 9.6,
+    usable_energy_kwh: 9.6,
+    dod_pct: 100,
+    max_charge_current_a: 30,
+    max_discharge_current_a: 30,
+    cycle_life: 6000,
+    max_parallel_units: 4,
+    ip_rating: 'IP55',
+    dimensions_mm: '625 × 545 × 330',
+    weight_kg: 114.0,
+    warranty_years: 10,
+    compatible_inverters: ['Sungrow SH5.0RS', 'Sungrow SH6.0RS', 'Sungrow SH10RT'],
+    datasheet_source: 'DS_20220421_SBR096_128_160_192_224_256_Datasheet_V13_EN.pdf'
+  },
+  {
+    id: 5,
+    manufacturer: 'BYD',
+    model: 'Battery-Box Premium HVM 11.0',
+    chemistry: 'LiFePO4 (Cobalt-Free)',
+    nominal_voltage_v: 204.8,
+    operating_voltage_min_v: 160.0,
+    operating_voltage_max_v: 240.0,
+    nominal_capacity_ah: 54,
+    total_energy_kwh: 11.04,
+    usable_energy_kwh: 11.04,
+    dod_pct: 100,
+    max_charge_current_a: 50,
+    max_discharge_current_a: 50,
+    cycle_life: 6000,
+    max_parallel_units: 3,
+    ip_rating: 'IP55',
+    dimensions_mm: '585 × 298 × 1228',
+    weight_kg: 167.0,
+    warranty_years: 10,
+    compatible_inverters: ['Fronius Primo GEN24 Plus', 'SMA Sunny Boy Storage', 'Sungrow SH5.0RS'],
+    datasheet_source: '241224_Datasheet_Battery-Box HVM(US)_V1.4_EN-676a1fc2b0fe6.pdf'
+  }
 ];
 
 export function calculateDomesticBillClient(units: number, isProsumer: boolean = false, netUnits: number = 0): { energyCharge: number; fixedCharge: number; totalBill: number; tier: string; breakdown: any[] } {

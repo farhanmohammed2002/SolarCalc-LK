@@ -17,12 +17,15 @@ from app.calculations.solar import get_solar_resource
 from app.calculations.tariff import calculate_domestic_bill, estimate_units_from_bill
 from app.calculations.validation import validate_inputs
 from app.services.report_service import generate_pdf_assessment
+from app.routes.ai import router as ai_router
 
 app = FastAPI(
     title="SolarCalc LK V1.0 API",
     description="Sri Lankan Residential Rooftop Solar PV Planning, PUCSL January 2025 Tariff & GSA Spatial Engine",
     version="1.0.0"
 )
+
+app.include_router(ai_router)
 
 # Enable CORS for frontend integration
 app.add_middleware(
@@ -79,17 +82,23 @@ def query_solar_resource(lat: float, lon: float):
 def get_equipment():
     panels_path = os.path.join(DATA_DIR, "panels.json")
     inverters_path = os.path.join(DATA_DIR, "inverters.json")
+    batteries_path = os.path.join(DATA_DIR, "batteries.json")
     panels = []
     inverters = []
+    batteries = []
     if os.path.exists(panels_path):
         with open(panels_path, "r", encoding="utf-8") as f:
             panels = json.load(f)
     if os.path.exists(inverters_path):
         with open(inverters_path, "r", encoding="utf-8") as f:
             inverters = json.load(f)
+    if os.path.exists(batteries_path):
+        with open(batteries_path, "r", encoding="utf-8") as f:
+            batteries = json.load(f)
     return {
         "panels": panels,
-        "inverters": inverters
+        "inverters": inverters,
+        "batteries": batteries
     }
 
 @app.get("/api/tariffs")

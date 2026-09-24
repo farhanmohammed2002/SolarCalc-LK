@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sun, Compass, BookOpen, Database, User, HelpCircle, FileText, Calculator } from 'lucide-react';
+import { SolarCalcAiIcon } from './ai/AIIcon';
 import { AuthModal } from './Auth/AuthModal';
 
 interface NavbarProps {
@@ -29,12 +30,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
 
   const navItems = [
     { id: 'home', label: 'Home', icon: Sun },
-    { id: 'calculator', label: 'Solar Calculator', icon: Calculator },
+    { id: 'calculator', label: 'Calculator', icon: Calculator },
     { id: 'map', label: 'Solar Map', icon: Compass },
     { id: 'methodology', label: 'Methodology', icon: BookOpen },
     { id: 'sources', label: 'Sources', icon: Database },
+    { id: 'ai-assistant', label: 'AI Assistant', icon: SolarCalcAiIcon },
     { id: 'about', label: 'About Developer', icon: User },
-    { id: 'faq', label: 'FAQ & Guidance', icon: HelpCircle },
+    { id: 'faq', label: 'FAQ', icon: HelpCircle },
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
 

@@ -46,6 +46,30 @@ export interface InverterModel {
   datasheet_source: string;
 }
 
+export interface BatteryModel {
+  id: number;
+  manufacturer: string;
+  model: string;
+  chemistry: string;
+  nominal_voltage_v: number;
+  operating_voltage_min_v: number;
+  operating_voltage_max_v: number;
+  nominal_capacity_ah: number;
+  total_energy_kwh: number;
+  usable_energy_kwh: number;
+  dod_pct: number;
+  max_charge_current_a: number;
+  max_discharge_current_a: number;
+  cycle_life: number;
+  max_parallel_units: number;
+  ip_rating: string;
+  dimensions_mm: string;
+  weight_kg: number;
+  warranty_years: number;
+  compatible_inverters: string[];
+  datasheet_source: string;
+}
+
 export interface CalculationRequest {
   district: string;
   latitude: number;

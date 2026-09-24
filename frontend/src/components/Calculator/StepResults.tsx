@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Download, ArrowLeft, RefreshCw, Printer, FileText, CheckCircle2, ShieldCheck, Share2 } from 'lucide-react';
+import { Download, ArrowLeft, RefreshCw, Printer, FileText, CheckCircle2, ShieldCheck, Share2, Sparkles, MessageSquare, ChevronRight } from 'lucide-react';
+import { SolarCalcAiIcon } from '../ai/AIIcon';
 import { CalculationResult } from '../../types/solar';
 import { MetricCards } from '../Dashboard/MetricCards';
 import { MonthlyGenerationChart } from '../Dashboard/MonthlyGenerationChart';
@@ -10,9 +11,10 @@ import { TariffBreakdownTable } from '../Dashboard/TariffBreakdownTable';
 interface StepResultsProps {
   result: CalculationResult;
   onModify: () => void;
+  onAskAi?: (prompt?: string) => void;
 }
 
-export const StepResults: React.FC<StepResultsProps> = ({ result, onModify }) => {
+export const StepResults: React.FC<StepResultsProps> = ({ result, onModify, onAskAi }) => {
   const [downloading, setDownloading] = useState(false);
 
   const handleDownloadPDF = async () => {
@@ -95,6 +97,63 @@ export const StepResults: React.FC<StepResultsProps> = ({ result, onModify }) =>
             <Download className="w-4 h-4" />
             {downloading ? 'Generating PDF...' : 'Download PDF Proposal'}
           </button>
+        </div>
+      </div>
+
+      {/* Ask SolarCalc AI Feature Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-emerald-950 text-white rounded-2xl p-5 border border-emerald-500/30 shadow-lg relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-sky-500 to-emerald-500 flex items-center justify-center p-0.5 shadow-md flex-shrink-0">
+              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                <SolarCalcAiIcon className="w-6 h-6 text-amber-400" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-sm sm:text-base text-white">Ask SolarCalc AI</h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Engineering Assistant
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Have questions about your {result.system.actual_capacity_kwp} kWp system, inverter matching, or payback period?
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onAskAi?.('Explain my solar PV system.')}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Ask SolarCalc AI about these results</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Quick Suggestion Pills */}
+        <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-bold text-amber-400/90 uppercase tracking-wider flex items-center gap-1">
+            <MessageSquare className="w-3 h-3" /> Quick Prompts:
+          </span>
+          {[
+            'Explain my solar PV system.',
+            'Why was this system size selected?',
+            'Why was this inverter selected?',
+            'Explain my annual generation.',
+            'Explain my payback period.',
+            'Explain my electricity bill savings.',
+            'Explain my energy balance.'
+          ].map((prompt, idx) => (
+            <button
+              key={idx}
+              onClick={() => onAskAi?.(prompt)}
+              className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-emerald-950/80 text-slate-200 hover:text-white border border-slate-700/80 hover:border-emerald-500/50 transition-all cursor-pointer"
+            >
+              {prompt}
+            </button>
+          ))}
         </div>
       </div>
 
